@@ -30,9 +30,11 @@ async def companies(test_session):
 @pytest_asyncio.fixture
 async def accounts(test_session, companies):
     """Create accounts for testing."""
+    from app.services.admin import generate_api_key, hash_api_key
+
     accounts = [
-        Account(id="buyer1", cash_balance=Decimal("100000.00")),
-        Account(id="seller1", cash_balance=Decimal("50000.00")),
+        Account(id="buyer1", api_key_hash=hash_api_key(generate_api_key()), cash_balance=Decimal("100000.00")),
+        Account(id="seller1", api_key_hash=hash_api_key(generate_api_key()), cash_balance=Decimal("50000.00")),
     ]
     for a in accounts:
         test_session.add(a)

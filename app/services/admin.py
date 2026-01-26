@@ -1,5 +1,6 @@
 """Admin service - business logic for admin operations."""
 
+import hashlib
 import secrets
 
 from sqlalchemy import select
@@ -51,9 +52,21 @@ def generate_api_key() -> str:
     """Generate a secure API key for a trader account.
 
     Returns:
-        A URL-safe random string (43 characters)
+        A URL-safe random string (sk_ prefix + 43 characters)
     """
     return f"sk_{secrets.token_urlsafe(32)}"
+
+
+def hash_api_key(api_key: str) -> str:
+    """Hash an API key for secure storage.
+
+    Args:
+        api_key: The plain API key
+
+    Returns:
+        SHA-256 hash of the API key (64 hex characters)
+    """
+    return hashlib.sha256(api_key.encode()).hexdigest()
 
 
 async def create_account(session: AsyncSession, data: AccountCreate) -> tuple[Account, str]:
@@ -70,17 +83,17 @@ async def create_account(session: AsyncSession, data: AccountCreate) -> tuple[Ac
         IntegrityError: If account_id already exists
     """
     api_key = generate_api_key()
+    api_key_hash = hash_api_key(api_key)
 
     account = Account(
         id=data.account_id,
+        api_key_hash=api_key_hash,
         cash_balance=data.initial_cash,
     )
     session.add(account)
     await session.commit()
     await session.refresh(account)
 
-    # Note: In a real system, we'd store the hashed API key
-    # For Phase 1, we just return it (not stored)
     return account, api_key
 
 

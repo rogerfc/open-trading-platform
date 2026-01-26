@@ -1,0 +1,22 @@
+[
+  {
+    "account_id": "alice",
+    "initial_cash": 100000.00
+  },
+  {
+    "account_id": "bob",
+    "initial_cash": 50000.00
+  },
+  {
+    "account_id": "charlie",
+    "initial_cash": 75000.00
+  },
+  {
+    "account_id": "diana",
+    "initial_cash": 200000.00
+  },
+  {
+    "account_id": "marketmaker",
+    "initial_cash": 1000000.00
+  }
+]

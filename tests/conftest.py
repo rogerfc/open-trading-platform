@@ -109,9 +109,12 @@ async def sample_company(test_session):
 async def sample_account(test_session):
     """Create a sample account for testing."""
     from decimal import Decimal
+    from app.services.admin import generate_api_key, hash_api_key
 
+    api_key = generate_api_key()
     account = Account(
         id="trader1",
+        api_key_hash=hash_api_key(api_key),
         cash_balance=Decimal("10000.00"),
     )
     test_session.add(account)
@@ -124,9 +127,12 @@ async def sample_account(test_session):
 async def sample_account_2(test_session, sample_account):
     """Create a second sample account for testing trades."""
     from decimal import Decimal
+    from app.services.admin import generate_api_key, hash_api_key
 
+    api_key = generate_api_key()
     account = Account(
         id="trader2",
+        api_key_hash=hash_api_key(api_key),
         cash_balance=Decimal("5000.00"),
     )
     test_session.add(account)

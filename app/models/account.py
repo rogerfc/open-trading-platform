@@ -23,6 +23,9 @@ class Account(Base):
     # Primary key: unique account identifier
     id: Mapped[str] = mapped_column(String, primary_key=True)
 
+    # API key hash for authentication (SHA-256 hash of the API key)
+    api_key_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+
     # Available cash for trading
     # Numeric(15,2) allows up to 999,999,999,999,999.99
     cash_balance: Mapped[Decimal] = mapped_column(

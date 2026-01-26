@@ -19,6 +19,17 @@ from app.schemas.public import (
     TradePublic,
     TradesResponse,
 )
+from app.schemas.trader import (
+    AccountInfoResponse,
+    HoldingResponse,
+    HoldingsListResponse,
+    OrderCreate,
+    OrderListResponse,
+    OrderResponse,
+    OrderSide,
+    OrderStatus,
+    OrderType,
+)
 
 __all__ = [
     # Admin schemas
@@ -38,4 +49,14 @@ __all__ = [
     "MarketDataResponse",
     "MarketDataSummary",
     "AllMarketDataResponse",
+    # Trader schemas
+    "OrderCreate",
+    "OrderResponse",
+    "OrderListResponse",
+    "OrderSide",
+    "OrderType",
+    "OrderStatus",
+    "AccountInfoResponse",
+    "HoldingResponse",
+    "HoldingsListResponse",
 ]

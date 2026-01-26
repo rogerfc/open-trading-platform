@@ -20,6 +20,7 @@ from app.models import (
     OrderType,
     Trade,
 )
+from app.services.admin import generate_api_key, hash_api_key
 
 
 # ============================================================================
@@ -127,8 +128,12 @@ async def test_company_float_not_exceed_total(test_session):
 @pytest.mark.asyncio
 async def test_create_account(test_session):
     """Test creating an account with valid data."""
+    api_key = generate_api_key()
+    api_key_hash = hash_api_key(api_key)
+
     account = Account(
         id="user123",
+        api_key_hash=api_key_hash,
         cash_balance=Decimal("50000.00"),
     )
     test_session.add(account)
@@ -141,12 +146,16 @@ async def test_create_account(test_session):
 
     assert saved.id == "user123"
     assert saved.cash_balance == Decimal("50000.00")
+    assert saved.api_key_hash == api_key_hash
 
 
 @pytest.mark.asyncio
 async def test_account_default_cash_balance(test_session):
     """Test that cash_balance defaults to 0.00."""
-    account = Account(id="defaultuser")
+    api_key = generate_api_key()
+    api_key_hash = hash_api_key(api_key)
+
+    account = Account(id="defaultuser", api_key_hash=api_key_hash)
     test_session.add(account)
     await test_session.commit()
 
@@ -161,8 +170,12 @@ async def test_account_default_cash_balance(test_session):
 @pytest.mark.asyncio
 async def test_account_cash_non_negative(test_session):
     """Test that cash_balance must be non-negative."""
+    api_key = generate_api_key()
+    api_key_hash = hash_api_key(api_key)
+
     account = Account(
         id="broke",
+        api_key_hash=api_key_hash,
         cash_balance=Decimal("-100.00"),  # Invalid: must be >= 0
     )
     test_session.add(account)
@@ -174,7 +187,10 @@ async def test_account_cash_non_negative(test_session):
 @pytest.mark.asyncio
 async def test_account_created_at_auto(test_session):
     """Test that created_at is automatically set."""
-    account = Account(id="newuser", cash_balance=Decimal("100.00"))
+    api_key = generate_api_key()
+    api_key_hash = hash_api_key(api_key)
+
+    account = Account(id="newuser", api_key_hash=api_key_hash, cash_balance=Decimal("100.00"))
     test_session.add(account)
     await test_session.commit()
 
