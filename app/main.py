@@ -12,6 +12,7 @@ from app.database import init_db
 
 # Import models to ensure they're registered with SQLAlchemy
 from app.models import Account, Company, Holding, Order, Trade  # noqa: F401
+from app.routers import admin_router
 
 
 @asynccontextmanager
@@ -38,6 +39,10 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+
+# Register routers
+app.include_router(admin_router, prefix="/admin", tags=["admin"])
 
 
 @app.get("/health")
