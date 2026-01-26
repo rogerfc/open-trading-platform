@@ -213,6 +213,13 @@ async def place_order(
         status=OrderStatus.OPEN,
     )
     session.add(order)
+    await session.flush()  # Get order in DB before matching
+
+    # Attempt to match the order against the order book
+    from app.services import matching
+
+    await matching.match_order(session, order)
+
     await session.commit()
     await session.refresh(order)
 
