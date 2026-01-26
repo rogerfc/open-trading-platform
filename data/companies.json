@@ -3,56 +3,56 @@
     "ticker": "TECH",
     "name": "TechCorp Industries",
     "total_shares": 10000000,
-    "float_shares": 4000000,
+    "float_shares": 500,
     "ipo_price": 150.00
   },
   {
     "ticker": "BANK",
     "name": "First National Bank",
     "total_shares": 5000000,
-    "float_shares": 3500000,
+    "float_shares": 1000,
     "ipo_price": 85.00
   },
   {
     "ticker": "RETL",
     "name": "MegaMart Retail",
     "total_shares": 8000000,
-    "float_shares": 6000000,
+    "float_shares": 2000,
     "ipo_price": 42.50
   },
   {
     "ticker": "ENRG",
     "name": "GreenPower Energy",
     "total_shares": 12000000,
-    "float_shares": 5000000,
+    "float_shares": 1000,
     "ipo_price": 68.00
   },
   {
     "ticker": "HLTH",
     "name": "HealthFirst Pharmaceuticals",
     "total_shares": 6000000,
-    "float_shares": 2500000,
+    "float_shares": 300,
     "ipo_price": 220.00
   },
   {
     "ticker": "AUTO",
     "name": "SpeedDrive Motors",
     "total_shares": 4000000,
-    "float_shares": 2000000,
+    "float_shares": 1000,
     "ipo_price": 95.00
   },
   {
     "ticker": "FOOD",
     "name": "FreshFarms Agriculture",
     "total_shares": 3000000,
-    "float_shares": 2000000,
+    "float_shares": 2000,
     "ipo_price": 35.00
   },
   {
     "ticker": "AERO",
     "name": "SkyHigh Aerospace",
     "total_shares": 2000000,
-    "float_shares": 800000,
+    "float_shares": 200,
     "ipo_price": 310.00
   }
 ]
