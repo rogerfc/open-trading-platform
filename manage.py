@@ -51,7 +51,15 @@ async def _clear_db():
 
 
 async def _db_load_companies(filepath: Path):
-    """Load companies from a JSON file directly to DB."""
+    """Load companies from a JSON file directly to DB.
+
+    Uses the admin service to create treasury accounts, holdings, and IPO orders.
+    """
+    from decimal import Decimal
+    from sqlalchemy.exc import IntegrityError
+    from app.services import admin as admin_service
+    from app.schemas.admin import CompanyCreate
+
     with open(filepath) as f:
         companies_data = json.load(f)
 
@@ -60,25 +68,32 @@ async def _db_load_companies(filepath: Path):
         skipped = 0
 
         for data in companies_data:
+            # Check if company already exists
             result = await session.execute(
-                select(Company).where(Company.ticker == data["ticker"])
+                select(Company).where(Company.ticker == data["ticker"].upper())
             )
             if result.scalar_one_or_none():
                 skipped += 1
                 click.echo(f"  Skipped {data['ticker']} (already exists)")
                 continue
 
-            company = Company(
-                ticker=data["ticker"],
-                name=data["name"],
-                total_shares=data["total_shares"],
-                float_shares=data["float_shares"],
-            )
-            session.add(company)
-            loaded += 1
-            click.echo(f"  Loaded {data['ticker']}: {data['name']}")
-
-        await session.commit()
+            try:
+                company_data = CompanyCreate(
+                    ticker=data["ticker"],
+                    name=data["name"],
+                    total_shares=data["total_shares"],
+                    float_shares=data["float_shares"],
+                    ipo_price=Decimal(str(data.get("ipo_price", "100.00"))),
+                )
+                await admin_service.create_company(session, company_data)
+                loaded += 1
+                click.echo(
+                    f"  Loaded {data['ticker']}: {data['name']} "
+                    f"(IPO @ ${data.get('ipo_price', 100):.2f})"
+                )
+            except IntegrityError:
+                skipped += 1
+                click.echo(f"  Skipped {data['ticker']} (already exists)")
 
     return loaded, skipped
 

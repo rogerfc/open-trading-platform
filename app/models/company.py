@@ -5,7 +5,9 @@ Companies are static entities that define tradeable securities.
 In Phase 1, company data (shares) is fixed after creation.
 """
 
-from sqlalchemy import BigInteger, CheckConstraint, String
+from decimal import Decimal
+
+from sqlalchemy import BigInteger, CheckConstraint, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -29,6 +31,11 @@ class Company(Base):
     # The difference (total - float) represents privately held shares
     float_shares: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
+    # IPO price - the initial offering price per share
+    ipo_price: Mapped[Decimal] = mapped_column(
+        Numeric(15, 2), nullable=False, default=Decimal("100.00")
+    )
+
     # Relationships (defined for ORM navigation)
     holdings: Mapped[list["Holding"]] = relationship(back_populates="company")
     orders: Mapped[list["Order"]] = relationship(back_populates="company")
@@ -41,6 +48,7 @@ class Company(Base):
         CheckConstraint(
             "float_shares <= total_shares", name="check_float_not_exceed_total"
         ),
+        CheckConstraint("ipo_price > 0", name="check_ipo_price_positive"),
     )
 
     def __repr__(self) -> str:

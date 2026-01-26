@@ -13,6 +13,11 @@ class CompanyCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255, description="Company name")
     total_shares: int = Field(..., gt=0, description="Total shares outstanding")
     float_shares: int = Field(..., ge=0, description="Shares available for trading")
+    ipo_price: Decimal = Field(
+        default=Decimal("100.00"),
+        gt=0,
+        description="Initial offering price per share",
+    )
 
     @field_validator("float_shares")
     @classmethod
@@ -31,6 +36,7 @@ class CompanyResponse(BaseModel):
     name: str
     total_shares: int
     float_shares: int
+    ipo_price: Decimal
 
     model_config = {"from_attributes": True}
 
