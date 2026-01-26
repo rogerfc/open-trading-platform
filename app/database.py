@@ -12,8 +12,9 @@ from sqlalchemy.orm import DeclarativeBase
 DATABASE_URL = "sqlite+aiosqlite:///./stock_exchange.db"
 
 # Create async engine
-# echo=True logs SQL statements (useful for debugging, disable in production)
-engine = create_async_engine(DATABASE_URL, echo=True)
+# echo=False by default, set SQLALCHEMY_ECHO=1 to enable SQL logging
+import os
+engine = create_async_engine(DATABASE_URL, echo=os.getenv("SQLALCHEMY_ECHO") == "1")
 
 # Session factory - creates new database sessions
 AsyncSessionLocal = async_sessionmaker(
