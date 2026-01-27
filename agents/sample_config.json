@@ -1,0 +1,10 @@
+{
+  "base_url": "http://localhost:8000",
+  "interval": 5.0,
+  "agents": [
+    {"api_key": "REPLACE_WITH_ALICE_API_KEY", "name": "alice"},
+    {"api_key": "REPLACE_WITH_BOB_API_KEY", "name": "bob"},
+    {"api_key": "REPLACE_WITH_CHARLIE_API_KEY", "name": "charlie"},
+    {"api_key": "REPLACE_WITH_DIANA_API_KEY", "name": "diana"}
+  ]
+}
