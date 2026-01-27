@@ -4,6 +4,7 @@ FastAPI application entry point.
 Run with: uvicorn app.main:app --reload
 """
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -28,7 +29,12 @@ async def lifespan(app: FastAPI):
     print("Database initialized")
 
     if telemetry.setup_telemetry():
-        print("Telemetry initialized (OTLP metrics enabled)")
+        # Attach OTLP handler to root logger for log export
+        handler = telemetry.get_log_handler()
+        if handler:
+            logging.getLogger().addHandler(handler)
+            logging.getLogger().setLevel(logging.INFO)
+        print("Telemetry initialized (OTLP metrics + logs enabled)")
     else:
         print("Telemetry disabled")
 

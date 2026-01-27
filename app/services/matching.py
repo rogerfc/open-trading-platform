@@ -9,6 +9,7 @@ Implements price-time priority matching with the following rules:
 6. Market orders that cannot be fully filled have unfilled portion cancelled (IOC)
 """
 
+import logging
 import uuid
 from decimal import Decimal
 
@@ -25,6 +26,8 @@ from app.models import (
     Trade,
 )
 from app import telemetry
+
+logger = logging.getLogger(__name__)
 
 
 def generate_trade_id() -> str:
@@ -103,6 +106,19 @@ async def match_order(session: AsyncSession, order: Order) -> list[Trade]:
             telemetry.record_order_filled(order.ticker)
         if resting.status == OrderStatus.FILLED:
             telemetry.record_order_filled(resting.ticker)
+
+        # Structured logging for trade
+        logger.info(
+            "Trade executed",
+            extra={
+                "trade_id": trade.id,
+                "ticker": order.ticker,
+                "quantity": execution_quantity,
+                "price": float(execution_price),
+                "buyer_id": buyer_id,
+                "seller_id": seller_id,
+            },
+        )
 
         trades.append(trade)
 

@@ -1,10 +1,15 @@
-"""OpenTelemetry metrics for the stock exchange."""
+"""OpenTelemetry metrics and logs for the stock exchange."""
 
+import logging
 import os
 from decimal import Decimal
 
 from opentelemetry import metrics
+from opentelemetry._logs import set_logger_provider
 from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
+from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
+from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.resources import Resource
@@ -13,6 +18,7 @@ from opentelemetry.sdk.resources import Resource
 # Module-level state
 _initialized = False
 _meter = None
+_log_handler = None
 
 # Counters (cumulative)
 _trades_total = None
@@ -105,8 +111,26 @@ def setup_telemetry() -> bool:
         unit="1",
     )
 
+    # === LOGS ===
+    global _log_handler
+    logs_endpoint = otlp_endpoint.replace("/v1/metrics", "/v1/logs")
+    log_exporter = OTLPLogExporter(endpoint=logs_endpoint)
+    logger_provider = LoggerProvider(resource=resource)
+    logger_provider.add_log_record_processor(BatchLogRecordProcessor(log_exporter))
+    set_logger_provider(logger_provider)
+
+    _log_handler = LoggingHandler(
+        level=logging.INFO,
+        logger_provider=logger_provider,
+    )
+
     _initialized = True
     return True
+
+
+def get_log_handler() -> LoggingHandler | None:
+    """Get the OTLP logging handler to attach to Python loggers."""
+    return _log_handler
 
 
 def is_enabled() -> bool:

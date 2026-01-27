@@ -1,5 +1,6 @@
 """Trader service - business logic for trader operations."""
 
+import logging
 import uuid
 
 from sqlalchemy import and_, select
@@ -8,6 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Account, Company, Holding, Order, OrderSide, OrderStatus, OrderType
 from app.schemas.trader import OrderCreate
 from app import telemetry
+
+logger = logging.getLogger(__name__)
 
 
 def generate_order_id() -> str:
@@ -219,6 +222,20 @@ async def place_order(
     # Record telemetry for order placement
     telemetry.record_order_placed(ticker, data.side.value, data.order_type.value)
 
+    # Structured logging for order
+    logger.info(
+        "Order placed",
+        extra={
+            "order_id": order.id,
+            "account_id": account.id,
+            "ticker": ticker,
+            "side": data.side.value,
+            "order_type": data.order_type.value,
+            "quantity": data.quantity,
+            "price": float(price) if price else None,
+        },
+    )
+
     # Attempt to match the order against the order book
     from app.services import matching
 
@@ -250,6 +267,16 @@ async def cancel_order(session: AsyncSession, order: Order) -> Order:
 
     # Record telemetry for cancellation
     telemetry.record_order_cancelled(order.ticker)
+
+    # Structured logging for cancellation
+    logger.info(
+        "Order cancelled",
+        extra={
+            "order_id": order.id,
+            "account_id": order.account_id,
+            "ticker": order.ticker,
+        },
+    )
 
     await session.commit()
     await session.refresh(order)
