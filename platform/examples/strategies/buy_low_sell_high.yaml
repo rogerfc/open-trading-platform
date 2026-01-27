@@ -1,0 +1,43 @@
+name: "Buy Low Sell High"
+description: "A simple strategy that buys when prices drop and sells when they rise"
+
+settings:
+  max_order_value: 500
+  min_cash_reserve: 100
+
+rules:
+  - name: "Buy the Dip"
+    description: "Buy when price drops 5% below recent average"
+    ticker: all
+    when:
+      - metric: price_change_pct
+        operator: "<"
+        value: -5
+      - metric: my_cash
+        operator: ">"
+        value: 200
+    then:
+      - action: buy
+        quantity_pct: 0.25
+        price_offset_pct: -0.01
+        order_type: limit
+    cooldown_seconds: 300
+    priority: 10
+
+  - name: "Take Profits"
+    description: "Sell when price rises 10% above average"
+    ticker: all
+    when:
+      - metric: price_change_pct
+        operator: ">"
+        value: 10
+      - metric: my_holdings
+        operator: ">"
+        value: 0
+    then:
+      - action: sell
+        quantity_pct: 0.5
+        price_offset_pct: 0.01
+        order_type: limit
+    cooldown_seconds: 300
+    priority: 5

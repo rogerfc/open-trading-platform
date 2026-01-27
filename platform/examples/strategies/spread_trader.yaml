@@ -1,0 +1,64 @@
+name: "Spread Trader"
+description: "Profits from wide bid-ask spreads by placing orders on both sides"
+
+settings:
+  max_order_value: 1000
+  min_cash_reserve: 500
+
+rules:
+  - name: "Wide Spread Opportunity"
+    description: "Place orders when spread is unusually wide"
+    ticker: all
+    when:
+      - metric: spread_pct
+        operator: ">"
+        value: 2
+      - metric: my_open_orders
+        operator: "<"
+        value: 4
+      - metric: my_cash
+        operator: ">"
+        value: 600
+    then:
+      - action: buy
+        quantity: 10
+        price_offset_pct: -0.005
+        order_type: limit
+    cooldown_seconds: 120
+    priority: 10
+
+  - name: "Sell into Spread"
+    description: "Sell when we have holdings and spread is wide"
+    ticker: all
+    when:
+      - metric: spread_pct
+        operator: ">"
+        value: 2
+      - metric: my_holdings
+        operator: ">"
+        value: 5
+      - metric: my_open_orders
+        operator: "<"
+        value: 4
+    then:
+      - action: sell
+        quantity: 5
+        price_offset_pct: 0.005
+        order_type: limit
+    cooldown_seconds: 120
+    priority: 10
+
+  - name: "Clean Up Orders"
+    description: "Cancel old orders if spread narrows"
+    ticker: all
+    when:
+      - metric: spread_pct
+        operator: "<"
+        value: 0.5
+      - metric: my_open_orders
+        operator: ">"
+        value: 2
+    then:
+      - action: cancel_orders
+    cooldown_seconds: 60
+    priority: 20

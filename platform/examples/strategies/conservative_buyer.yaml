@@ -1,0 +1,28 @@
+name: "Conservative Buyer"
+description: "A cautious strategy for beginners - only buys, never sells"
+
+settings:
+  max_order_value: 200
+  min_cash_reserve: 500
+  max_position_pct: 0.3
+
+rules:
+  - name: "Buy on Big Dip"
+    description: "Only buy when there's a significant price drop"
+    ticker: all
+    when:
+      - metric: price_change_pct
+        operator: "<"
+        value: -8
+      - metric: my_cash
+        operator: ">"
+        value: 700
+      - metric: my_position_value
+        operator: "<"
+        value: 2000
+    then:
+      - action: buy
+        quantity_pct: 0.1
+        order_type: limit
+    cooldown_seconds: 600
+    priority: 5
