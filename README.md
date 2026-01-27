@@ -7,7 +7,7 @@ A complete stock exchange simulation with three independent components.
 | Directory | Description | Port |
 |-----------|-------------|------|
 | `exchange/` | Stock exchange API server | 8000 |
-| `platform/` | Autonomous trading agent platform | 8001 |
+| `agents/` | Autonomous trading agent platform | 8001 |
 | `observability/` | Grafana + Prometheus + Loki stack | 3000 |
 
 ## Quick Start
@@ -17,13 +17,13 @@ A complete stock exchange simulation with three independent components.
 docker compose up -d exchange
 
 # Run with agent platform
-docker compose --profile platform up -d
+docker compose --profile agents up -d
 
 # Run with observability stack
 docker compose --profile observability up -d
 
 # Run everything
-docker compose --profile platform --profile observability up -d
+docker compose --profile agents --profile observability up -d
 ```
 
 ## Architecture
@@ -52,8 +52,8 @@ cd exchange
 pip install -r requirements.txt
 uvicorn app.main:app --port 8000
 
-# Platform
-cd platform
+# Agents
+cd agents
 pip install -r requirements.txt
 uvicorn agentplatform.main:app --port 8001
 
@@ -64,5 +64,5 @@ docker compose --profile observability up -d
 ## Documentation
 
 - Exchange API: `exchange/docs/`
-- Platform usage: `platform/README.md`
+- Agents usage: `agents/README.md`
 - Market health metrics: `exchange/docs/MARKET_HEALTH.md`

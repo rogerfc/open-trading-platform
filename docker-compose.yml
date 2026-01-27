@@ -14,9 +14,9 @@ services:
         required: false
 
   # === AGENT PLATFORM ===
-  platform:
-    build: ./platform
-    profiles: ["platform"]
+  agents:
+    build: ./agents
+    profiles: ["agents"]
     ports:
       - "8001:8001"
     depends_on:
