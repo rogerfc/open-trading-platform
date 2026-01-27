@@ -24,6 +24,7 @@ from app.models import (
     OrderType,
     Trade,
 )
+from app import telemetry
 
 
 def generate_trade_id() -> str:
@@ -95,6 +96,13 @@ async def match_order(session: AsyncSession, order: Order) -> list[Trade]:
         # Update order quantities and statuses
         _update_order_after_fill(order, execution_quantity)
         _update_order_after_fill(resting, execution_quantity)
+
+        # Record telemetry
+        telemetry.record_trade(order.ticker, execution_quantity, execution_price)
+        if order.status == OrderStatus.FILLED:
+            telemetry.record_order_filled(order.ticker)
+        if resting.status == OrderStatus.FILLED:
+            telemetry.record_order_filled(resting.ticker)
 
         trades.append(trade)
 

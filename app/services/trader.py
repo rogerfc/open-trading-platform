@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Account, Company, Holding, Order, OrderSide, OrderStatus, OrderType
 from app.schemas.trader import OrderCreate
+from app import telemetry
 
 
 def generate_order_id() -> str:
@@ -215,6 +216,9 @@ async def place_order(
     session.add(order)
     await session.flush()  # Get order in DB before matching
 
+    # Record telemetry for order placement
+    telemetry.record_order_placed(ticker, data.side.value, data.order_type.value)
+
     # Attempt to match the order against the order book
     from app.services import matching
 
@@ -243,6 +247,10 @@ async def cancel_order(session: AsyncSession, order: Order) -> Order:
         raise ValueError(f"Cannot cancel order with status {order.status.value}")
 
     order.status = OrderStatus.CANCELLED
+
+    # Record telemetry for cancellation
+    telemetry.record_order_cancelled(order.ticker)
+
     await session.commit()
     await session.refresh(order)
 

@@ -13,18 +13,24 @@ from app.database import init_db
 # Import models to ensure they're registered with SQLAlchemy
 from app.models import Account, Company, Holding, Order, Trade  # noqa: F401
 from app.routers import admin_router, public_router, trader_router
+from app import telemetry
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler.
 
-    Startup: Create database tables if they don't exist.
+    Startup: Create database tables if they don't exist, initialize telemetry.
     Shutdown: (nothing to clean up for now)
     """
     # Startup
     await init_db()
     print("Database initialized")
+
+    if telemetry.setup_telemetry():
+        print("Telemetry initialized (OTLP metrics enabled)")
+    else:
+        print("Telemetry disabled")
 
     yield
 
