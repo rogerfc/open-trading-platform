@@ -19,8 +19,14 @@ services:
     profiles: ["agents"]
     ports:
       - "8001:8001"
+    environment:
+      - OTLP_ENDPOINT=http://alloy:4318/v1/metrics
     depends_on:
-      - exchange
+      exchange:
+        condition: service_started
+      alloy:
+        condition: service_started
+        required: false
 
   # === OBSERVABILITY (profile: observability) ===
   alloy:

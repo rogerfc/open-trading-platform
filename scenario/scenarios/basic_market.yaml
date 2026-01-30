@@ -1,0 +1,37 @@
+name: "Basic Market"
+description: "Minimal scenario with 2 companies, 2 accounts, and 1 random trader"
+
+exchange:
+  url: "http://localhost:8000"
+
+companies:
+  - ticker: TECH
+    name: "TechCorp Industries"
+    total_shares: 1000000
+    float_shares: 1000
+    ipo_price: 100.00
+
+  - ticker: BANK
+    name: "First National Bank"
+    total_shares: 500000
+    float_shares: 500
+    ipo_price: 50.00
+
+accounts:
+  - id: alice
+    initial_cash: 50000.00
+
+  - id: bob
+    initial_cash: 50000.00
+
+agent_platform:
+  url: "http://localhost:8001"
+
+agents:
+  - name: "Alice Random Trader"
+    account: alice
+    strategy_type: random
+    strategy_params:
+      max_order_value: 500
+    interval_seconds: 5
+    auto_start: true

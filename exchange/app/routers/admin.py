@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_session
+from app.database import get_session, engine, Base
 from app.schemas.admin import (
     AccountCreate,
     AccountListItem,
@@ -108,3 +108,25 @@ async def list_accounts(
         )
         for a in accounts
     ]
+
+
+@router.post(
+    "/reset",
+    response_model=dict,
+    summary="Reset the exchange",
+)
+async def reset_exchange() -> dict:
+    """Clear all data from the exchange database.
+
+    This is a destructive operation that removes all:
+    - Companies
+    - Accounts
+    - Holdings
+    - Orders
+    - Trades
+    """
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+
+    return {"status": "reset"}

@@ -10,7 +10,7 @@
     {
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
       "id": 100,
-      "title": "Market Overview",
+      "title": "Agent Overview",
       "type": "row"
     },
     {
@@ -36,12 +36,12 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "expr": "sum(exchange_trades_total{ticker=~\"$ticker\"})",
-          "legendFormat": "Total Trades",
+          "expr": "sum(agent_cycles_total{agent_name=~\"$agent\"})",
+          "legendFormat": "Total Cycles",
           "refId": "A"
         }
       ],
-      "title": "Total Trades",
+      "title": "Total Cycles",
       "type": "stat"
     },
     {
@@ -66,12 +66,12 @@
       },
       "targets": [
         {
-          "expr": "sum(exchange_trade_volume_total{ticker=~\"$ticker\"})",
-          "legendFormat": "Total Volume",
+          "expr": "sum(agent_trades_total{agent_name=~\"$agent\"})",
+          "legendFormat": "Total Trades",
           "refId": "A"
         }
       ],
-      "title": "Total Volume (shares)",
+      "title": "Total Trades",
       "type": "stat"
     },
     {
@@ -81,7 +81,7 @@
           "color": { "mode": "palette-classic" },
           "mappings": [],
           "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
-          "unit": "currencyUSD"
+          "unit": "short"
         }
       },
       "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
@@ -96,12 +96,12 @@
       },
       "targets": [
         {
-          "expr": "sum(exchange_trade_value_total{ticker=~\"$ticker\"})",
-          "legendFormat": "Total Value",
+          "expr": "sum(agent_actions_total{agent_name=~\"$agent\"})",
+          "legendFormat": "Total Actions",
           "refId": "A"
         }
       ],
-      "title": "Total Trade Value",
+      "title": "Total Actions",
       "type": "stat"
     },
     {
@@ -110,7 +110,7 @@
         "defaults": {
           "color": { "mode": "palette-classic" },
           "mappings": [],
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }] },
           "unit": "short"
         }
       },
@@ -126,12 +126,12 @@
       },
       "targets": [
         {
-          "expr": "sum(exchange_orders_total{ticker=~\"$ticker\"})",
-          "legendFormat": "Total Orders",
+          "expr": "sum(agent_errors_total{agent_name=~\"$agent\"})",
+          "legendFormat": "Total Errors",
           "refId": "A"
         }
       ],
-      "title": "Total Orders",
+      "title": "Total Errors",
       "type": "stat"
     },
     {
@@ -178,12 +178,12 @@
       },
       "targets": [
         {
-          "expr": "rate(exchange_trades_total{ticker=~\"$ticker\"}[1m]) * 60",
-          "legendFormat": "{{ ticker }}",
+          "expr": "rate(agent_cycles_total{agent_name=~\"$agent\"}[1m]) * 60",
+          "legendFormat": "{{ agent_name }}",
           "refId": "A"
         }
       ],
-      "title": "Trade Rate (trades/min)",
+      "title": "Cycles Rate (cycles/min)",
       "type": "timeseries"
     },
     {
@@ -224,18 +224,18 @@
       },
       "targets": [
         {
-          "expr": "rate(exchange_trade_volume_total{ticker=~\"$ticker\"}[1m]) * 60",
-          "legendFormat": "{{ ticker }}",
+          "expr": "rate(agent_trades_total{agent_name=~\"$agent\"}[1m]) * 60",
+          "legendFormat": "{{ agent_name }}",
           "refId": "A"
         }
       ],
-      "title": "Volume Rate (shares/min)",
+      "title": "Trades Rate (trades/min)",
       "type": "timeseries"
     },
     {
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
       "id": 102,
-      "title": "Order Flow",
+      "title": "Actions Breakdown",
       "type": "row"
     },
     {
@@ -251,7 +251,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 10,
+            "fillOpacity": 30,
             "gradientMode": "none",
             "hideFrom": { "legend": false, "tooltip": false, "viz": false },
             "lineInterpolation": "smooth",
@@ -260,15 +260,29 @@
             "scaleDistribution": { "type": "linear" },
             "showPoints": "auto",
             "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
+            "stacking": { "group": "A", "mode": "normal" },
             "thresholdsStyle": { "mode": "off" }
           },
           "mappings": [],
           "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
           "unit": "short"
-        }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "BUY" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "SELL" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "CANCEL" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }]
+          }
+        ]
       },
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 15 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
       "id": 7,
       "options": {
         "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
@@ -276,12 +290,12 @@
       },
       "targets": [
         {
-          "expr": "sum by (side) (rate(exchange_orders_total{ticker=~\"$ticker\"}[1m])) * 60",
-          "legendFormat": "{{ side }}",
+          "expr": "sum by (action_type) (rate(agent_actions_total{agent_name=~\"$agent\"}[1m])) * 60",
+          "legendFormat": "{{ action_type }}",
           "refId": "A"
         }
       ],
-      "title": "Orders by Side (orders/min)",
+      "title": "Actions by Type (stacked)",
       "type": "timeseries"
     },
     {
@@ -310,11 +324,11 @@
             "thresholdsStyle": { "mode": "off" }
           },
           "mappings": [],
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }] },
           "unit": "short"
         }
       },
-      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 15 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
       "id": 8,
       "options": {
         "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
@@ -322,64 +336,18 @@
       },
       "targets": [
         {
-          "expr": "rate(exchange_orders_filled_total{ticker=~\"$ticker\"}[1m]) * 60",
-          "legendFormat": "{{ ticker }}",
+          "expr": "rate(agent_errors_total{agent_name=~\"$agent\"}[1m]) * 60",
+          "legendFormat": "{{ agent_name }} ({{ error_type }})",
           "refId": "A"
         }
       ],
-      "title": "Fills (orders/min)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
-            "lineInterpolation": "smooth",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "off" }
-          },
-          "mappings": [],
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
-          "unit": "short"
-        }
-      },
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 15 },
-      "id": 9,
-      "options": {
-        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "none" }
-      },
-      "targets": [
-        {
-          "expr": "rate(exchange_orders_cancelled_total{ticker=~\"$ticker\"}[1m]) * 60",
-          "legendFormat": "{{ ticker }}",
-          "refId": "A"
-        }
-      ],
-      "title": "Cancellations (orders/min)",
+      "title": "Errors Rate (errors/min)",
       "type": "timeseries"
     },
     {
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
       "id": 103,
-      "title": "Per-Ticker Breakdown",
+      "title": "Per-Agent Breakdown",
       "type": "row"
     },
     {
@@ -393,7 +361,38 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 24 },
+      "id": 9,
+      "options": {
+        "displayMode": "lcd",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showUnfilled": true
+      },
+      "targets": [
+        {
+          "expr": "agent_cycles_total{agent_name=~\"$agent\"}",
+          "legendFormat": "{{ agent_name }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Cycles by Agent",
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 24 },
       "id": 10,
       "options": {
         "displayMode": "lcd",
@@ -405,13 +404,50 @@
       },
       "targets": [
         {
-          "expr": "exchange_trades_total{ticker=~\"$ticker\"}",
-          "legendFormat": "{{ ticker }}",
+          "expr": "agent_trades_total{agent_name=~\"$agent\"}",
+          "legendFormat": "{{ agent_name }}",
           "refId": "A"
         }
       ],
-      "title": "Trades by Ticker",
+      "title": "Trades by Agent",
       "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 24 },
+      "id": 11,
+      "options": {
+        "displayMode": "lcd",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showUnfilled": true
+      },
+      "targets": [
+        {
+          "expr": "agent_errors_total{agent_name=~\"$agent\"}",
+          "legendFormat": "{{ agent_name }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Errors by Agent",
+      "type": "bargauge"
+    },
+    {
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+      "id": 104,
+      "title": "Strategy Breakdown",
+      "type": "row"
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
@@ -424,30 +460,59 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
-      "id": 11,
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 33 },
+      "id": 12,
       "options": {
-        "displayMode": "lcd",
-        "minVizHeight": 10,
-        "minVizWidth": 0,
-        "orientation": "horizontal",
+        "displayLabels": ["name", "value"],
+        "legend": { "displayMode": "list", "placement": "right", "showLegend": true },
+        "pieType": "pie",
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "showUnfilled": true
+        "tooltip": { "mode": "multi", "sort": "none" }
       },
       "targets": [
         {
-          "expr": "exchange_trade_volume_total{ticker=~\"$ticker\"}",
-          "legendFormat": "{{ ticker }}",
+          "expr": "sum by (strategy_type) (agent_cycles_total{agent_name=~\"$agent\"})",
+          "legendFormat": "{{ strategy_type }}",
           "refId": "A"
         }
       ],
-      "title": "Volume by Ticker",
-      "type": "bargauge"
+      "title": "Cycles by Strategy Type",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 33 },
+      "id": 13,
+      "options": {
+        "displayLabels": ["name", "value"],
+        "legend": { "displayMode": "list", "placement": "right", "showLegend": true },
+        "pieType": "pie",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "expr": "sum by (strategy_type) (agent_trades_total{agent_name=~\"$agent\"})",
+          "legendFormat": "{{ strategy_type }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Trades by Strategy Type",
+      "type": "piechart"
     }
   ],
   "refresh": "5s",
   "schemaVersion": 38,
-  "tags": ["stock-exchange"],
+  "tags": ["agent-platform"],
   "templating": {
     "list": [
       {
@@ -458,15 +523,15 @@
           "value": ["$__all"]
         },
         "datasource": { "type": "prometheus", "uid": "prometheus" },
-        "definition": "label_values(exchange_trades_total, ticker)",
+        "definition": "label_values(agent_cycles_total, agent_name)",
         "hide": 0,
         "includeAll": true,
-        "label": "Ticker",
+        "label": "Agent",
         "multi": true,
-        "name": "ticker",
+        "name": "agent",
         "options": [],
         "query": {
-          "query": "label_values(exchange_trades_total, ticker)",
+          "query": "label_values(agent_cycles_total, agent_name)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 2,
@@ -480,7 +545,7 @@
   "time": { "from": "now-15m", "to": "now" },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Stock Exchange",
-  "uid": "stock-exchange",
+  "title": "Agent Platform",
+  "uid": "agent-platform",
   "version": 1
 }

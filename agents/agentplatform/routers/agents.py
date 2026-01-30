@@ -3,8 +3,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from agentplatform.database import get_session
-from agentplatform.models.agent import AgentStatus
+from agentplatform.database import get_session, engine, Base
+from agentplatform.models.agent import Agent, AgentStatus
 from agentplatform.schemas.agent import (
     AgentCreate,
     AgentUpdate,
@@ -21,6 +21,36 @@ from agentplatform.strategies.registry import registry
 from agentplatform.strategies.dsl.compiler import compile_yaml, DSLCompilationError
 
 router = APIRouter()
+
+
+# ============================================================================
+# Admin Endpoints
+# ============================================================================
+
+
+@router.post(
+    "/admin/reset",
+    summary="Reset platform",
+    response_model=dict,
+)
+async def reset_platform(
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """Stop all running agents and clear the database."""
+    # Stop all running agents
+    agents = await agent_service.list_agents(session)
+    stopped_count = 0
+    for agent in agents:
+        if agent.status == AgentStatus.RUNNING:
+            await runner.stop_agent(agent.id)
+            stopped_count += 1
+
+    # Clear database
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+
+    return {"status": "reset", "agents_stopped": stopped_count}
 
 
 # ============================================================================

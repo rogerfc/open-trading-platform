@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from agentplatform.database import init_db
 from agentplatform.routers.agents import router as agents_router
 from agentplatform.strategies.builtin import register_builtin_strategies
+from agentplatform.telemetry import setup_telemetry
 
 
 @asynccontextmanager
@@ -15,6 +16,8 @@ async def lifespan(app: FastAPI):
     # Startup
     await init_db()
     register_builtin_strategies()
+    if setup_telemetry():
+        print("Telemetry enabled")
     print("Agent Platform started")
 
     yield

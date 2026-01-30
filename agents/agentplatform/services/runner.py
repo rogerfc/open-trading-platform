@@ -10,6 +10,7 @@ from agentplatform.services import agent as agent_service
 from agentplatform.strategies import Action, MarketContext, Strategy
 from agentplatform.strategies.registry import registry
 from agentplatform.strategies.dsl.compiler import compile_yaml
+from agentplatform import telemetry
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ async def gather_context(client: ExchangeClient) -> MarketContext:
 
 
 async def execute_action(
-    client: ExchangeClient, action: Action, agent_name: str
+    client: ExchangeClient, action: Action, agent_name: str, strategy_type: str
 ) -> bool:
     """Execute a single action. Returns True if a trade was executed."""
     try:
@@ -60,6 +61,7 @@ async def execute_action(
             if action.order_id:
                 order = await client.cancel_order(action.order_id)
                 logger.info(f"[{agent_name}] Cancelled order {order.id}")
+                telemetry.record_action(agent_name, "CANCEL")
                 return False
         elif action.action_type == "BUY":
             if action.ticker and action.quantity:
@@ -74,7 +76,10 @@ async def execute_action(
                     f"[{agent_name}] BUY {order.quantity} {order.ticker} "
                     f"@ {order.price} -> {order.status}"
                 )
-                return order.status == "FILLED"
+                telemetry.record_action(agent_name, "BUY")
+                if order.status == "FILLED":
+                    telemetry.record_trade(agent_name, strategy_type)
+                    return True
         elif action.action_type == "SELL":
             if action.ticker and action.quantity:
                 order = await client.place_order(
@@ -88,7 +93,10 @@ async def execute_action(
                     f"[{agent_name}] SELL {order.quantity} {order.ticker} "
                     f"@ {order.price} -> {order.status}"
                 )
-                return order.status == "FILLED"
+                telemetry.record_action(agent_name, "SELL")
+                if order.status == "FILLED":
+                    telemetry.record_trade(agent_name, strategy_type)
+                    return True
     except Exception as e:
         logger.warning(f"[{agent_name}] Action failed: {action} - {e}")
     return False
@@ -150,6 +158,7 @@ class AgentRunner:
         """Main agent execution loop."""
         agent_id = agent.id
         agent_name = agent.name
+        strategy_type = agent.strategy_type
         exchange_url = agent.exchange_url
         api_key = agent.api_key
         interval = agent.interval_seconds
@@ -159,6 +168,7 @@ class AgentRunner:
             strategy = build_strategy(agent)
         except Exception as e:
             logger.error(f"[{agent_name}] Failed to build strategy: {e}")
+            telemetry.record_error(agent_name, "strategy_build")
             async with AsyncSessionLocal() as session:
                 db_agent = await agent_service.get_agent(session, agent_id)
                 if db_agent:
@@ -184,10 +194,11 @@ class AgentRunner:
 
                     trades_executed = 0
                     for action in actions:
-                        if await execute_action(client, action, agent_name):
+                        if await execute_action(client, action, agent_name, strategy_type):
                             trades_executed += 1
 
                     # Record metrics
+                    telemetry.record_cycle(agent_name, strategy_type)
                     async with AsyncSessionLocal() as session:
                         db_agent = await agent_service.get_agent(session, agent_id)
                         if db_agent:
@@ -197,6 +208,7 @@ class AgentRunner:
 
                 except Exception as e:
                     logger.error(f"[{agent_name}] Cycle error: {e}")
+                    telemetry.record_error(agent_name, "cycle")
                     async with AsyncSessionLocal() as session:
                         db_agent = await agent_service.get_agent(session, agent_id)
                         if db_agent:
