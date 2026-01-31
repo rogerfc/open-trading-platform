@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from agentplatform.database import get_session, engine, Base
+from agentplatform.database import get_session, engine, Base, AsyncSessionLocal
 from agentplatform.models.agent import Agent, AgentStatus
 from agentplatform.schemas.agent import (
     AgentCreate,
@@ -33,19 +33,20 @@ router = APIRouter()
     summary="Reset platform",
     response_model=dict,
 )
-async def reset_platform(
-    session: AsyncSession = Depends(get_session),
-) -> dict:
+async def reset_platform() -> dict:
     """Stop all running agents and clear the database."""
-    # Stop all running agents
-    agents = await agent_service.list_agents(session)
+    # Use a dedicated session for listing agents, then close it before DDL
     stopped_count = 0
-    for agent in agents:
-        if agent.status == AgentStatus.RUNNING:
-            await runner.stop_agent(agent.id)
-            stopped_count += 1
+    async with AsyncSessionLocal() as session:
+        agents = await agent_service.list_agents(session)
+        for agent in agents:
+            if agent.status == AgentStatus.RUNNING:
+                await runner.stop_agent(agent.id)
+                stopped_count += 1
+        # Commit/close session before DDL to release locks
+        await session.commit()
 
-    # Clear database
+    # Clear database (needs exclusive lock, so must be after session closes)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)

@@ -49,6 +49,10 @@ htmlcov/
 .env
 .env.local
 
+# Local CLI config
+.market.yaml
+.scenario_state.json
+
 # OS
 .DS_Store
 Thumbs.db

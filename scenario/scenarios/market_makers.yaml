@@ -2,8 +2,8 @@ name: "Market Makers"
 description: "Multiple agents providing liquidity with different strategies"
 
 exchange:
-  # Use Docker service name for agents running in containers
-  url: "http://exchange:8000"
+  # Use K8s service name for agents running in Kubernetes
+  url: "http://exchange.exchange.svc.cluster.local:8000"
 
 companies:
   - ticker: TECH
