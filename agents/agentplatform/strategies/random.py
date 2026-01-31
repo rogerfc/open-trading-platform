@@ -14,10 +14,12 @@ class RandomStrategy:
         max_order_value: Decimal = Decimal("1000"),
         price_offset_pct: Decimal = Decimal("0.02"),
         cancel_probability: float = 0.1,
+        market_order_probability: float = 0.3,
     ):
         self.max_order_value = max_order_value
         self.price_offset_pct = price_offset_pct
         self.cancel_probability = cancel_probability
+        self.market_order_probability = market_order_probability
 
     def decide(self, context: MarketContext) -> list[Action]:
         """Generate random trading actions."""
@@ -36,10 +38,23 @@ class RandomStrategy:
         company = random.choice(context.companies)
         ticker = company.ticker
 
-        # Get market price
+        # Get market price (use last trade, or fallback to mid of bid/ask, or best ask)
         last_price = context.get_last_price(ticker)
         if not last_price or last_price <= 0:
-            return actions
+            # No trades yet - try to get price from orderbook
+            best_bid = context.get_best_bid(ticker)
+            best_ask = context.get_best_ask(ticker)
+            if best_bid and best_ask:
+                last_price = (best_bid + best_ask) / 2
+            elif best_ask:
+                last_price = best_ask
+            elif best_bid:
+                last_price = best_bid
+            else:
+                return actions  # No price information at all
+
+        # Decide order type
+        use_market = random.random() < self.market_order_probability
 
         # Decide buy or sell
         if random.random() < 0.5:
@@ -48,28 +63,48 @@ class RandomStrategy:
             max_spend = min(available * 0.1, float(self.max_order_value))
             if max_spend > float(last_price):
                 quantity = random.randint(1, int(max_spend / float(last_price)))
-                price = last_price * (1 - self.price_offset_pct)
-                actions.append(
-                    Action.buy(
-                        ticker=ticker,
-                        quantity=quantity,
-                        price=price.quantize(Decimal("0.01")),
-                        order_type="LIMIT",
+                if use_market:
+                    actions.append(
+                        Action.buy(
+                            ticker=ticker,
+                            quantity=quantity,
+                            price=None,
+                            order_type="MARKET",
+                        )
                     )
-                )
+                else:
+                    price = last_price * (1 - self.price_offset_pct)
+                    actions.append(
+                        Action.buy(
+                            ticker=ticker,
+                            quantity=quantity,
+                            price=price.quantize(Decimal("0.01")),
+                            order_type="LIMIT",
+                        )
+                    )
         else:
             # Sell
             holding = context.get_holding(ticker)
             if holding > 0:
                 quantity = random.randint(1, holding)
-                price = last_price * (1 + self.price_offset_pct)
-                actions.append(
-                    Action.sell(
-                        ticker=ticker,
-                        quantity=quantity,
-                        price=price.quantize(Decimal("0.01")),
-                        order_type="LIMIT",
+                if use_market:
+                    actions.append(
+                        Action.sell(
+                            ticker=ticker,
+                            quantity=quantity,
+                            price=None,
+                            order_type="MARKET",
+                        )
                     )
-                )
+                else:
+                    price = last_price * (1 + self.price_offset_pct)
+                    actions.append(
+                        Action.sell(
+                            ticker=ticker,
+                            quantity=quantity,
+                            price=price.quantize(Decimal("0.01")),
+                            order_type="LIMIT",
+                        )
+                    )
 
         return actions

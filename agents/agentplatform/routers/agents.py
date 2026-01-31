@@ -345,11 +345,12 @@ async def start_agent(
             detail="Agent is already running",
         )
 
+    # Update status first (before starting runner to avoid race condition)
+    agent = await agent_service.start_agent(session, agent)
+
     # Start the agent in the runner
     await runner.start_agent(agent)
 
-    # Update status
-    agent = await agent_service.start_agent(session, agent)
     return _agent_to_response(agent)
 
 

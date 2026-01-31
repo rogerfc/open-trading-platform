@@ -66,7 +66,7 @@
       },
       "targets": [
         {
-          "expr": "sum(exchange_trade_volume_total{ticker=~\"$ticker\"})",
+          "expr": "sum(exchange_trade_volume_shares_total{ticker=~\"$ticker\"})",
           "legendFormat": "Total Volume",
           "refId": "A"
         }
@@ -96,7 +96,7 @@
       },
       "targets": [
         {
-          "expr": "sum(exchange_trade_value_total{ticker=~\"$ticker\"})",
+          "expr": "sum(exchange_trade_value_currency_total{ticker=~\"$ticker\"})",
           "legendFormat": "Total Value",
           "refId": "A"
         }
@@ -224,7 +224,7 @@
       },
       "targets": [
         {
-          "expr": "rate(exchange_trade_volume_total{ticker=~\"$ticker\"}[1m]) * 60",
+          "expr": "rate(exchange_trade_volume_shares_total{ticker=~\"$ticker\"}[1m]) * 60",
           "legendFormat": "{{ ticker }}",
           "refId": "A"
         }
@@ -436,7 +436,7 @@
       },
       "targets": [
         {
-          "expr": "exchange_trade_volume_total{ticker=~\"$ticker\"}",
+          "expr": "exchange_trade_volume_shares_total{ticker=~\"$ticker\"}",
           "legendFormat": "{{ ticker }}",
           "refId": "A"
         }

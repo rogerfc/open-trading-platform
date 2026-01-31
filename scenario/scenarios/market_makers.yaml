@@ -2,7 +2,8 @@ name: "Market Makers"
 description: "Multiple agents providing liquidity with different strategies"
 
 exchange:
-  url: "http://localhost:8000"
+  # Use Docker service name for agents running in containers
+  url: "http://exchange:8000"
 
 companies:
   - ticker: TECH
@@ -50,27 +51,29 @@ agents:
       rules:
         - name: place_bid
           description: Place a bid below market
+          ticker: TECH
           when:
-            cash_available: "> 1000"
+            - metric: my_cash
+              operator: ">"
+              value: 1000
           then:
-            action: BUY
-            ticker: TECH
-            quantity: 10
-            price_offset: -2.00
-            order_type: LIMIT
+            - action: buy
+              quantity: 10
+              price_offset_pct: -0.02
+              order_type: limit
 
         - name: place_ask
           description: Place an ask above market
+          ticker: TECH
           when:
-            holding:
-              ticker: TECH
-              quantity: "> 0"
+            - metric: my_holdings
+              operator: ">"
+              value: 0
           then:
-            action: SELL
-            ticker: TECH
-            quantity: 5
-            price_offset: 2.00
-            order_type: LIMIT
+            - action: sell
+              quantity: 5
+              price_offset_pct: 0.02
+              order_type: limit
     interval_seconds: 8
     auto_start: true
 
@@ -83,26 +86,28 @@ agents:
 
       rules:
         - name: place_bid
+          ticker: BANK
           when:
-            cash_available: "> 500"
+            - metric: my_cash
+              operator: ">"
+              value: 500
           then:
-            action: BUY
-            ticker: BANK
-            quantity: 20
-            price_offset: -1.00
-            order_type: LIMIT
+            - action: buy
+              quantity: 20
+              price_offset_pct: -0.01
+              order_type: limit
 
         - name: place_ask
+          ticker: BANK
           when:
-            holding:
-              ticker: BANK
-              quantity: "> 0"
+            - metric: my_holdings
+              operator: ">"
+              value: 0
           then:
-            action: SELL
-            ticker: BANK
-            quantity: 10
-            price_offset: 1.00
-            order_type: LIMIT
+            - action: sell
+              quantity: 10
+              price_offset_pct: 0.01
+              order_type: limit
     interval_seconds: 10
     auto_start: true
 

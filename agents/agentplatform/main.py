@@ -1,5 +1,6 @@
 """Agent Platform - FastAPI application entry point."""
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -7,7 +8,13 @@ from fastapi import FastAPI
 from agentplatform.database import init_db
 from agentplatform.routers.agents import router as agents_router
 from agentplatform.strategies.builtin import register_builtin_strategies
-from agentplatform.telemetry import setup_telemetry
+from agentplatform.telemetry import setup_telemetry, get_log_handler
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(message)s",
+)
 
 
 @asynccontextmanager
@@ -18,6 +25,10 @@ async def lifespan(app: FastAPI):
     register_builtin_strategies()
     if setup_telemetry():
         print("Telemetry enabled")
+        # Add OTLP log handler to root logger
+        handler = get_log_handler()
+        if handler:
+            logging.getLogger().addHandler(handler)
     print("Agent Platform started")
 
     yield

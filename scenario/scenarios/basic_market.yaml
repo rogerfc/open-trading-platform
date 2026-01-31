@@ -2,7 +2,8 @@ name: "Basic Market"
 description: "Minimal scenario with 2 companies, 2 accounts, and 1 random trader"
 
 exchange:
-  url: "http://localhost:8000"
+  # Use Docker service name for agents running in containers
+  url: "http://exchange:8000"
 
 companies:
   - ticker: TECH
