@@ -13,7 +13,7 @@ Examples:
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import click
@@ -22,6 +22,7 @@ import yaml
 
 from market.client import ExchangeClient, AgentPlatformClient, APIError
 from market import output as out
+from market import config as cfg
 
 
 # =============================================================================
@@ -55,6 +56,39 @@ class Context:
 pass_context = click.make_pass_decorator(Context, ensure=True)
 
 
+def require_config(ctx: Context) -> None:
+    """Ensure config exists and services are reachable.
+
+    Loads configuration from file and tests connectivity to both services.
+    Exits with code 1 if config is missing or services are unreachable.
+    """
+    config_path = cfg.find_config()
+    if config_path is None:
+        out.error("No configuration found.")
+        out.info("Run 'python -m market.cli config' to create one.")
+        raise SystemExit(1)
+
+    config = cfg.load_config()
+    ctx.exchange_url = config.get("exchange_url", ctx.exchange_url)
+    ctx.agents_url = config.get("agents_url", ctx.agents_url)
+    # Reset clients to use new URLs
+    ctx._exchange_client = None
+    ctx._agents_client = None
+
+    # Test connectivity
+    try:
+        ctx.exchange.health()
+    except httpx.ConnectError:
+        out.error(f"Exchange unavailable at {ctx.exchange_url}")
+        raise SystemExit(1)
+
+    try:
+        ctx.agents.health()
+    except httpx.ConnectError:
+        out.error(f"Agent platform unavailable at {ctx.agents_url}")
+        raise SystemExit(1)
+
+
 # =============================================================================
 # Main CLI Group
 # =============================================================================
@@ -64,14 +98,14 @@ pass_context = click.make_pass_decorator(Context, ensure=True)
 @click.option(
     "--exchange-url", "-e",
     envvar="EXCHANGE_URL",
-    default="http://localhost:8000",
-    help="Exchange API URL",
+    default=None,
+    help="Exchange API URL (overrides config)",
 )
 @click.option(
     "--agents-url", "-a",
     envvar="AGENTS_URL",
-    default="http://localhost:8001",
-    help="Agent Platform API URL",
+    default=None,
+    help="Agent Platform API URL (overrides config)",
 )
 @click.option(
     "--output", "-o",
@@ -80,11 +114,154 @@ pass_context = click.make_pass_decorator(Context, ensure=True)
     help="Output format",
 )
 @pass_context
-def cli(ctx: Context, exchange_url: str, agents_url: str, output: str):
+def cli(ctx: Context, exchange_url: str | None, agents_url: str | None, output: str):
     """Unified CLI for stock exchange simulation management."""
-    ctx.exchange_url = exchange_url
-    ctx.agents_url = agents_url
+    # Load config if available
+    config = cfg.load_config()
+    ctx.exchange_url = exchange_url or config.get("exchange_url", "http://localhost:8000")
+    ctx.agents_url = agents_url or config.get("agents_url", "http://localhost:8001")
     ctx.output_format = output
+
+
+# =============================================================================
+# Config Commands
+# =============================================================================
+
+
+@cli.command("config")
+@click.argument("action", required=False, type=click.Choice(["show", "set"]))
+@click.argument("args", nargs=-1)
+def config_cmd(action: str | None, args: tuple):
+    """Manage CLI configuration.
+
+    Without arguments: interactive setup.
+
+    \b
+    Examples:
+        market config              # Interactive setup
+        market config show         # Show current config
+        market config set exchange_url http://localhost:8000
+    """
+    if action is None:
+        # Interactive setup
+        config_path = cfg.find_config()
+        if config_path:
+            out.info(f"Config file found: {config_path}")
+            current = cfg.load_config()
+        else:
+            out.info("No config file found. Creating new config.")
+            current = cfg.get_default_config()
+
+        # Prompt for values
+        exchange_url = click.prompt(
+            "Exchange URL",
+            default=current.get("exchange_url", "http://localhost:8000"),
+        )
+        agents_url = click.prompt(
+            "Agent Platform URL",
+            default=current.get("agents_url", "http://localhost:8001"),
+        )
+        grafana_url = click.prompt(
+            "Grafana URL",
+            default=current.get("grafana_url", "http://localhost:3000"),
+        )
+
+        new_config = {
+            "exchange_url": exchange_url,
+            "agents_url": agents_url,
+            "grafana_url": grafana_url,
+        }
+
+        save_path = cfg.save_config(new_config)
+        out.success(f"Configuration saved to {save_path}")
+
+    elif action == "show":
+        config_path = cfg.find_config()
+        if config_path is None:
+            out.info("No configuration file found.")
+            out.info("Run 'python -m market.cli config' to create one.")
+            return
+
+        config = cfg.load_config()
+        out.info(f"Config file: {config_path}")
+        out.info("")
+        for key, value in config.items():
+            out.info(f"  {key}: {value}")
+
+    elif action == "set":
+        if len(args) != 2:
+            out.error("Usage: market config set <key> <value>")
+            raise SystemExit(1)
+
+        key, value = args
+        valid_keys = {"exchange_url", "agents_url", "grafana_url"}
+        if key not in valid_keys:
+            out.error(f"Unknown config key: {key}")
+            out.info(f"Valid keys: {', '.join(sorted(valid_keys))}")
+            raise SystemExit(1)
+
+        config = cfg.load_config()
+        config[key] = value
+        save_path = cfg.save_config(config)
+        out.success(f"Set {key} = {value}")
+        out.info(f"Saved to {save_path}")
+
+
+# =============================================================================
+# Top-level Run/Stop Commands
+# =============================================================================
+
+
+@cli.command("run")
+@pass_context
+def run_agents(ctx: Context):
+    """Start all agents from loaded scenario."""
+    require_config(ctx)
+
+    state = load_scenario_state()
+    if not state:
+        out.error("No scenario loaded. Use 'market scenario load' first.")
+        raise SystemExit(1)
+
+    if not state.get("agent_ids"):
+        out.info("No agents in loaded scenario.")
+        return
+
+    for name, agent_id in state["agent_ids"].items():
+        try:
+            ctx.agents.start_agent(agent_id)
+            out.success(f"Started: {name}")
+        except APIError as e:
+            if "already running" in e.detail.lower():
+                out.info(f"Already running: {name}")
+            else:
+                out.error(f"Failed: {name} - {e.detail}")
+
+
+@cli.command("stop")
+@pass_context
+def stop_agents(ctx: Context):
+    """Stop all agents from loaded scenario."""
+    require_config(ctx)
+
+    state = load_scenario_state()
+    if not state:
+        out.error("No scenario loaded. Use 'market scenario load' first.")
+        raise SystemExit(1)
+
+    if not state.get("agent_ids"):
+        out.info("No agents in loaded scenario.")
+        return
+
+    for name, agent_id in state["agent_ids"].items():
+        try:
+            ctx.agents.stop_agent(agent_id)
+            out.success(f"Stopped: {name}")
+        except APIError as e:
+            if "cannot stop" in e.detail.lower() or "not running" in e.detail.lower():
+                out.info(f"Already stopped: {name}")
+            else:
+                out.error(f"Failed: {name} - {e.detail}")
 
 
 # =============================================================================
@@ -693,7 +870,7 @@ def save_scenario_state(scenario_path: str, api_keys: dict, agent_ids: dict) -> 
     """Save scenario state to file."""
     state = {
         "scenario": scenario_path,
-        "loaded_at": datetime.utcnow().isoformat() + "Z",
+        "loaded_at": datetime.now(timezone.utc).isoformat(),
         "api_keys": api_keys,
         "agent_ids": agent_ids,
     }
@@ -781,11 +958,15 @@ def scenario_validate(file: str):
 
 @scenario.command("load")
 @click.argument("file", type=click.Path(exists=True))
+@click.option("--yes", "-y", is_flag=True, help="Skip confirmation prompt for DB reset")
 @click.option("--no-clear", is_flag=True, help="Don't reset databases first")
-@click.option("--no-start", is_flag=True, help="Don't auto-start agents")
 @pass_context
-def scenario_load(ctx: Context, file: str, no_clear: bool, no_start: bool):
-    """Load a scenario (reset + create all resources)."""
+def scenario_load(ctx: Context, file: str, yes: bool, no_clear: bool):
+    """Load a scenario (reset + create all resources).
+
+    Resets databases, creates companies, accounts, and agents.
+    Agents are created but NOT started. Use 'market run' to start trading.
+    """
     try:
         from scenario.schema import ScenarioConfig
 
@@ -817,6 +998,10 @@ def scenario_load(ctx: Context, file: str, no_clear: bool, no_start: bool):
 
     # Reset if needed
     if not no_clear:
+        if not yes:
+            if not click.confirm("\nThis will reset both databases. Continue?"):
+                out.info("Aborted.")
+                return
         out.info("\nResetting databases...")
         try:
             ctx.exchange.reset()
@@ -864,7 +1049,7 @@ def scenario_load(ctx: Context, file: str, no_clear: bool, no_start: bool):
                 else:
                     out.error(f"  Failed {account.id}: {e.detail}")
 
-    # Create agents
+    # Create agents (but don't start them)
     agent_ids: dict[str, str] = {}
     if config.agents:
         out.info(f"\nCreating {len(config.agents)} agents...")
@@ -875,11 +1060,13 @@ def scenario_load(ctx: Context, file: str, no_clear: bool, no_start: bool):
                 continue
 
             try:
+                # Use exchange URL from scenario (for Docker) or fallback to CLI config
+                agent_exchange_url = config.exchange.url
                 result = ctx.agents.create_agent(
                     name=agent.name,
                     api_key=account_api_key,
                     strategy_type=agent.strategy_type,
-                    exchange_url=ctx.exchange_url,
+                    exchange_url=agent_exchange_url,
                     strategy_params=agent.strategy_params,
                     strategy_source=agent.strategy_source,
                     interval_seconds=agent.interval_seconds,
@@ -887,27 +1074,17 @@ def scenario_load(ctx: Context, file: str, no_clear: bool, no_start: bool):
                 agent_id = result["id"]
                 agent_ids[agent.name] = agent_id
                 out.info(f"  Created {agent.name} ({agent_id[:8]}...)")
-
-                if agent.auto_start and not no_start:
-                    try:
-                        ctx.agents.start_agent(agent_id)
-                        out.info(f"    Started")
-                    except APIError as e:
-                        out.warning(f"    Failed to start: {e.detail}")
             except APIError as e:
                 out.error(f"  Failed {agent.name}: {e.detail}")
 
-    # Save state
+    # Save state (API keys stored but not displayed)
     save_scenario_state(file, api_keys, agent_ids)
 
     out.info("\n" + "=" * 50)
     out.success("Scenario loaded!")
     out.info(f"State saved to: {SCENARIO_STATE_FILE}")
-
-    if api_keys:
-        out.info("\nAPI Keys:")
-        for account_id, key in api_keys.items():
-            out.info(f"  {account_id}: {key}")
+    out.info(f"\nAccounts: {len(api_keys)}, Agents: {len(agent_ids)}")
+    out.info("Use 'market run' to start trading.")
 
 
 @scenario.command("status")
@@ -1052,6 +1229,97 @@ def reset_all(ctx: Context):
 
 
 # =============================================================================
+# Grafana Commands
+# =============================================================================
+
+
+DASHBOARD_DIR = Path("observability/grafana/provisioning/dashboards")
+
+
+@cli.group()
+def grafana():
+    """Manage Grafana dashboards."""
+    pass
+
+
+@grafana.command("deploy")
+@click.option("--dashboard", "-d", help="Deploy specific dashboard (without .json extension)")
+@pass_context
+def grafana_deploy(ctx: Context, dashboard: str | None):
+    """Deploy dashboards to Grafana via API.
+
+    Pushes dashboard JSON files to Grafana using the HTTP API.
+    This allows live updates without restarting Grafana.
+
+    \b
+    Examples:
+        market grafana deploy              # Deploy all dashboards
+        market grafana deploy -d exchange  # Deploy specific dashboard
+    """
+    config = cfg.load_config()
+    grafana_url = config.get("grafana_url", "http://localhost:3000")
+
+    # Find dashboard files
+    if dashboard:
+        files = [DASHBOARD_DIR / f"{dashboard}.json"]
+    else:
+        files = list(DASHBOARD_DIR.glob("*.json"))
+
+    if not files:
+        out.info("No dashboard files found.")
+        return
+
+    deployed = 0
+    for file in files:
+        if not file.exists():
+            out.error(f"Dashboard not found: {file}")
+            continue
+
+        try:
+            with open(file) as f:
+                dashboard_json = json.load(f)
+        except json.JSONDecodeError as e:
+            out.error(f"Invalid JSON in {file.name}: {e}")
+            continue
+
+        # Prepare payload for Grafana API
+        # Set id to null to create as new dashboard (not update provisioned)
+        dashboard_json["id"] = None
+        payload = {
+            "dashboard": dashboard_json,
+            "folderId": 0,  # General folder
+            "overwrite": True,
+            "message": "Deployed via market CLI",
+        }
+
+        try:
+            resp = httpx.post(
+                f"{grafana_url}/api/dashboards/db",
+                json=payload,
+                timeout=10.0,
+            )
+            if resp.status_code == 200:
+                result = resp.json()
+                url = result.get("url", "")
+                out.success(f"Deployed: {file.stem}")
+                if url:
+                    out.info(f"  URL: {grafana_url}{url}")
+                deployed += 1
+            else:
+                error_msg = resp.json().get("message", resp.text)
+                out.error(f"Failed: {file.stem} - {error_msg}")
+        except httpx.ConnectError:
+            out.error(f"Cannot connect to Grafana at {grafana_url}")
+            raise SystemExit(1)
+        except httpx.TimeoutException:
+            out.error(f"Timeout connecting to Grafana at {grafana_url}")
+            raise SystemExit(1)
+
+    if deployed:
+        out.info(f"\nDeployed {deployed} dashboard(s) to {grafana_url}")
+
+
+# =============================================================================
 # Status Command
 # =============================================================================
 
@@ -1060,6 +1328,16 @@ def reset_all(ctx: Context):
 @pass_context
 def status(ctx: Context):
     """Show health/status of exchange and agent platform."""
+    # Configuration
+    config_path = cfg.find_config()
+    out.info("\nConfiguration")
+    out.info("-" * 40)
+    if config_path:
+        out.info(f"Config file: {config_path}")
+    else:
+        out.info("Config file: " + click.style("Not found", fg="yellow"))
+        out.info("  Run 'python -m market.cli config' to create one.")
+
     out.info("\nService Status")
     out.info("-" * 40)
 
@@ -1080,6 +1358,20 @@ def status(ctx: Context):
         out.info(f"Agent Platform ({ctx.agents_url}): " + click.style("UNREACHABLE", fg="red"))
     except APIError as e:
         out.info(f"Agent Platform ({ctx.agents_url}): " + click.style(f"ERROR ({e.status_code})", fg="red"))
+
+    # Grafana
+    config = cfg.load_config()
+    grafana_url = config.get("grafana_url", "http://localhost:3000")
+    try:
+        resp = httpx.get(f"{grafana_url}/api/health", timeout=5.0)
+        if resp.status_code == 200:
+            out.info(f"Grafana ({grafana_url}): " + click.style("OK", fg="green"))
+        else:
+            out.info(f"Grafana ({grafana_url}): " + click.style(f"ERROR ({resp.status_code})", fg="red"))
+    except httpx.ConnectError:
+        out.info(f"Grafana ({grafana_url}): " + click.style("UNREACHABLE", fg="yellow"))
+    except httpx.TimeoutException:
+        out.info(f"Grafana ({grafana_url}): " + click.style("TIMEOUT", fg="yellow"))
 
     # Scenario state
     state = load_scenario_state()
