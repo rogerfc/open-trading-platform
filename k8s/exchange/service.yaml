@@ -1,0 +1,21 @@
+# Exchange API Service
+# Apply with: kubectl apply -f k8s/exchange/service.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: exchange
+  namespace: exchange
+  labels:
+    app.kubernetes.io/name: exchange
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: stockexchange
+spec:
+  type: ClusterIP
+  selector:
+    app: exchange
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP

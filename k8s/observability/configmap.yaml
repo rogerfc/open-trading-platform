@@ -1,0 +1,86 @@
+# Alloy configuration for Grafana Cloud
+# Receives OTLP metrics from apps and pushes to Grafana Cloud
+# Apply with: kubectl apply -f k8s/observability/configmap.yaml
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alloy-config
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/component: observability
+    app.kubernetes.io/part-of: stockexchange
+data:
+  config.alloy: |
+    // Grafana Alloy configuration for Stock Exchange observability
+    // Receives OTLP metrics and logs, forwards to Grafana Cloud
+
+    // =============================================================================
+    // OTLP Receiver - accepts metrics and logs from the exchange and agents
+    // =============================================================================
+
+    otelcol.receiver.otlp "default" {
+      http {
+        endpoint = "0.0.0.0:4318"
+      }
+
+      output {
+        metrics = [otelcol.processor.batch.default.input]
+        logs    = [otelcol.processor.batch.logs.input]
+      }
+    }
+
+    // =============================================================================
+    // Batch Processors - batch data for efficient export
+    // =============================================================================
+
+    otelcol.processor.batch "default" {
+      output {
+        metrics = [otelcol.exporter.prometheus.grafana_cloud.input]
+      }
+    }
+
+    otelcol.processor.batch "logs" {
+      output {
+        logs = [otelcol.exporter.loki.grafana_cloud.input]
+      }
+    }
+
+    // =============================================================================
+    // Prometheus Exporter - convert OTLP metrics and push to Grafana Cloud
+    // =============================================================================
+
+    otelcol.exporter.prometheus "grafana_cloud" {
+      forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+    }
+
+    prometheus.remote_write "grafana_cloud" {
+      endpoint {
+        url = env("PROMETHEUS_URL")
+
+        basic_auth {
+          username = env("GRAFANA_CLOUD_USER")
+          password = env("GRAFANA_CLOUD_API_KEY")
+        }
+      }
+    }
+
+    // =============================================================================
+    // Loki Exporter - forward logs to Grafana Cloud Loki
+    // =============================================================================
+
+    otelcol.exporter.loki "grafana_cloud" {
+      forward_to = [loki.write.grafana_cloud.receiver]
+    }
+
+    loki.write "grafana_cloud" {
+      endpoint {
+        url = env("LOKI_URL")
+
+        basic_auth {
+          username = env("GRAFANA_CLOUD_USER")
+          password = env("GRAFANA_CLOUD_API_KEY")
+        }
+      }
+    }

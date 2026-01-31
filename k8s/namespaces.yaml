@@ -1,0 +1,29 @@
+# Kubernetes namespaces for Stock Exchange deployment
+# Apply with: kubectl apply -f k8s/namespaces.yaml
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: exchange
+  labels:
+    app.kubernetes.io/name: exchange
+    app.kubernetes.io/part-of: stockexchange
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: agents
+  labels:
+    app.kubernetes.io/name: agents
+    app.kubernetes.io/part-of: stockexchange
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: observability
+  labels:
+    app.kubernetes.io/name: observability
+    app.kubernetes.io/part-of: stockexchange

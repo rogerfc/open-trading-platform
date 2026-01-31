@@ -1,0 +1,21 @@
+# Agents Platform Service
+# Apply with: kubectl apply -f k8s/agents/service.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: agents
+  namespace: agents
+  labels:
+    app.kubernetes.io/name: agents
+    app.kubernetes.io/component: platform
+    app.kubernetes.io/part-of: stockexchange
+spec:
+  type: ClusterIP
+  selector:
+    app: agents
+  ports:
+    - name: http
+      port: 8001
+      targetPort: 8001
+      protocol: TCP

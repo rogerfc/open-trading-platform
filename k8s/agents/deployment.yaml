@@ -1,0 +1,65 @@
+# Agents Platform Deployment
+# Apply with: kubectl apply -f k8s/agents/deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agents
+  namespace: agents
+  labels:
+    app.kubernetes.io/name: agents
+    app.kubernetes.io/component: platform
+    app.kubernetes.io/part-of: stockexchange
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agents
+  template:
+    metadata:
+      labels:
+        app: agents
+        app.kubernetes.io/name: agents
+        app.kubernetes.io/component: platform
+        app.kubernetes.io/part-of: stockexchange
+    spec:
+      containers:
+        - name: agents
+          image: stockexchange/agents:latest
+          imagePullPolicy: Never  # Use local images
+          ports:
+            - containerPort: 8001
+              name: http
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: agents-db
+                  key: url
+            - name: EXCHANGE_URL
+              value: "http://exchange.exchange.svc.cluster.local:8000"
+            - name: OTLP_ENDPOINT
+              value: "http://alloy.observability.svc.cluster.local:4318/v1/metrics"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"

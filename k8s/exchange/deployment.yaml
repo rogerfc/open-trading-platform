@@ -1,0 +1,63 @@
+# Exchange API Deployment
+# Apply with: kubectl apply -f k8s/exchange/deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: exchange
+  namespace: exchange
+  labels:
+    app.kubernetes.io/name: exchange
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: stockexchange
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: exchange
+  template:
+    metadata:
+      labels:
+        app: exchange
+        app.kubernetes.io/name: exchange
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: stockexchange
+    spec:
+      containers:
+        - name: exchange
+          image: stockexchange/exchange:latest
+          imagePullPolicy: Never  # Use local images
+          ports:
+            - containerPort: 8000
+              name: http
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: exchange-db
+                  key: url
+            - name: OTLP_ENDPOINT
+              value: "http://alloy.observability.svc.cluster.local:4318/v1/metrics"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"

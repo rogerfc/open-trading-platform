@@ -1,0 +1,26 @@
+# HTTPRoute for Exchange API
+# Routes exchange.local to the exchange service
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: exchange
+  namespace: exchange
+  labels:
+    app.kubernetes.io/name: exchange
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: stockexchange
+spec:
+  parentRefs:
+    - name: stockexchange
+      namespace: nginx-gateway
+  hostnames:
+    - exchange.local
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: exchange
+          port: 8000

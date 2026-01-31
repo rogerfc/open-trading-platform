@@ -1,0 +1,18 @@
+# ReferenceGrant allows the Gateway to route to services in this namespace
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-gateway-to-exchange
+  namespace: exchange
+  labels:
+    app.kubernetes.io/name: exchange
+    app.kubernetes.io/part-of: stockexchange
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: exchange
+  to:
+    - group: ""
+      kind: Service
