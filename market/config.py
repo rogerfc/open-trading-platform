@@ -68,4 +68,6 @@ def get_default_config() -> dict:
         "exchange_url": "http://localhost:8000",
         "agents_url": "http://localhost:8001",
         "grafana_url": "http://localhost:3000",
+        "grafana_api_key": "",
+        "grafana_folder": "",
     }

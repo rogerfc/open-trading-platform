@@ -166,11 +166,29 @@ def config_cmd(action: str | None, args: tuple):
             default=current.get("grafana_url", "http://localhost:3000"),
         )
 
+        # Grafana Cloud settings (optional)
+        out.info("\nGrafana Cloud settings (leave empty for local Grafana):")
+        grafana_api_key = click.prompt(
+            "Grafana API Key (service account token)",
+            default=current.get("grafana_api_key", ""),
+            show_default=False,
+        )
+        grafana_folder = click.prompt(
+            "Grafana Folder",
+            default=current.get("grafana_folder", ""),
+            show_default=False,
+        )
+
         new_config = {
             "exchange_url": exchange_url,
             "agents_url": agents_url,
             "grafana_url": grafana_url,
         }
+        # Only add optional keys if they have values
+        if grafana_api_key:
+            new_config["grafana_api_key"] = grafana_api_key
+        if grafana_folder:
+            new_config["grafana_folder"] = grafana_folder
 
         save_path = cfg.save_config(new_config)
         out.success(f"Configuration saved to {save_path}")
@@ -194,7 +212,7 @@ def config_cmd(action: str | None, args: tuple):
             raise SystemExit(1)
 
         key, value = args
-        valid_keys = {"exchange_url", "agents_url", "grafana_url"}
+        valid_keys = {"exchange_url", "agents_url", "grafana_url", "grafana_api_key", "grafana_folder"}
         if key not in valid_keys:
             out.error(f"Unknown config key: {key}")
             out.info(f"Valid keys: {', '.join(sorted(valid_keys))}")
@@ -203,7 +221,9 @@ def config_cmd(action: str | None, args: tuple):
         config = cfg.load_config()
         config[key] = value
         save_path = cfg.save_config(config)
-        out.success(f"Set {key} = {value}")
+        # Mask API key in output
+        display_value = value if key != "grafana_api_key" else f"{value[:8]}..." if len(value) > 8 else "***"
+        out.success(f"Set {key} = {display_value}")
         out.info(f"Saved to {save_path}")
 
 
@@ -1242,22 +1262,109 @@ def grafana():
     pass
 
 
+def get_folder_uid(grafana_url: str, folder_name: str, headers: dict) -> str | None:
+    """Look up folder UID by name.
+
+    Args:
+        grafana_url: Base Grafana URL.
+        folder_name: Name of the folder to find.
+        headers: HTTP headers for authentication.
+
+    Returns:
+        Folder UID if found, None otherwise.
+    """
+    try:
+        resp = httpx.get(
+            f"{grafana_url}/api/folders",
+            headers=headers,
+            timeout=10.0,
+        )
+        if resp.status_code == 200:
+            folders = resp.json()
+            for folder in folders:
+                if folder.get("title") == folder_name:
+                    return folder.get("uid")
+    except (httpx.ConnectError, httpx.TimeoutException):
+        pass
+    return None
+
+
+def create_folder(grafana_url: str, folder_name: str, headers: dict) -> str | None:
+    """Create a new folder and return its UID.
+
+    Args:
+        grafana_url: Base Grafana URL.
+        folder_name: Name of the folder to create.
+        headers: HTTP headers for authentication.
+
+    Returns:
+        Folder UID if created successfully, None otherwise.
+    """
+    try:
+        resp = httpx.post(
+            f"{grafana_url}/api/folders",
+            headers=headers,
+            json={"title": folder_name},
+            timeout=10.0,
+        )
+        if resp.status_code == 200:
+            return resp.json().get("uid")
+    except (httpx.ConnectError, httpx.TimeoutException):
+        pass
+    return None
+
+
 @grafana.command("deploy")
 @click.option("--dashboard", "-d", help="Deploy specific dashboard (without .json extension)")
+@click.option("--api-key", envvar="GRAFANA_API_KEY", help="Grafana API key (service account token)")
+@click.option("--folder", "-f", help="Target folder name (created if doesn't exist)")
 @pass_context
-def grafana_deploy(ctx: Context, dashboard: str | None):
+def grafana_deploy(ctx: Context, dashboard: str | None, api_key: str | None, folder: str | None):
     """Deploy dashboards to Grafana via API.
 
     Pushes dashboard JSON files to Grafana using the HTTP API.
     This allows live updates without restarting Grafana.
 
+    For Grafana Cloud, configure authentication:
+      market config set grafana_api_key glsa_xxx
+      market config set grafana_folder StockExchange
+
     \b
     Examples:
         market grafana deploy              # Deploy all dashboards
         market grafana deploy -d exchange  # Deploy specific dashboard
+        market grafana deploy --folder StockExchange  # Deploy to folder
     """
     config = cfg.load_config()
     grafana_url = config.get("grafana_url", "http://localhost:3000")
+
+    # Get API key from option, config, or environment
+    token = api_key or config.get("grafana_api_key", "")
+
+    # Get folder from option or config
+    folder_name = folder or config.get("grafana_folder", "")
+
+    # Build headers
+    headers = {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    # Resolve folder UID if folder specified
+    folder_uid = None
+    if folder_name:
+        out.info(f"Looking up folder: {folder_name}")
+        folder_uid = get_folder_uid(grafana_url, folder_name, headers)
+        if folder_uid:
+            out.info(f"  Found folder UID: {folder_uid}")
+        else:
+            out.info(f"  Folder not found, creating...")
+            folder_uid = create_folder(grafana_url, folder_name, headers)
+            if folder_uid:
+                out.success(f"  Created folder: {folder_name} ({folder_uid})")
+            else:
+                out.error(f"  Failed to create folder: {folder_name}")
+                out.info("  Check that the API key has Editor permissions.")
+                raise SystemExit(1)
 
     # Find dashboard files
     if dashboard:
@@ -1287,14 +1394,20 @@ def grafana_deploy(ctx: Context, dashboard: str | None):
         dashboard_json["id"] = None
         payload = {
             "dashboard": dashboard_json,
-            "folderId": 0,  # General folder
             "overwrite": True,
             "message": "Deployed via market CLI",
         }
 
+        # Add folder targeting
+        if folder_uid:
+            payload["folderUid"] = folder_uid
+        else:
+            payload["folderId"] = 0  # General folder
+
         try:
             resp = httpx.post(
                 f"{grafana_url}/api/dashboards/db",
+                headers=headers,
                 json=payload,
                 timeout=10.0,
             )
@@ -1305,6 +1418,12 @@ def grafana_deploy(ctx: Context, dashboard: str | None):
                 if url:
                     out.info(f"  URL: {grafana_url}{url}")
                 deployed += 1
+            elif resp.status_code == 401:
+                out.error(f"Authentication failed. Check your API key.")
+                raise SystemExit(1)
+            elif resp.status_code == 403:
+                out.error(f"Permission denied. Check API key has Editor role.")
+                raise SystemExit(1)
             else:
                 error_msg = resp.json().get("message", resp.text)
                 out.error(f"Failed: {file.stem} - {error_msg}")
@@ -1317,6 +1436,8 @@ def grafana_deploy(ctx: Context, dashboard: str | None):
 
     if deployed:
         out.info(f"\nDeployed {deployed} dashboard(s) to {grafana_url}")
+        if folder_name:
+            out.info(f"Folder: {folder_name}")
 
 
 # =============================================================================
