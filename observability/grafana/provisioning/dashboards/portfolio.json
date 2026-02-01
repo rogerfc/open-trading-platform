@@ -1,0 +1,407 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "description": "Beginner-friendly portfolio tracking dashboard. Requires API v1 (Exchange v0.2.0+)",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "options": {
+        "code": { "language": "plaintext", "showLineNumbers": false },
+        "content": "# My Portfolio\n\nThis dashboard shows how your investments are doing. Green numbers mean you're making money!",
+        "mode": "markdown"
+      },
+      "title": "",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 2 },
+      "id": 101,
+      "title": "Portfolio Summary",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "currencyUSD"
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 3 },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "portfolio_total_value{account_id=~\"$account\"}",
+          "legendFormat": "Total Value",
+          "refId": "A"
+        }
+      ],
+      "title": "Total Portfolio Value",
+      "description": "Your cash plus the current value of all your stocks",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0 },
+              { "color": "green", "value": 0.01 }
+            ]
+          },
+          "unit": "currencyUSD"
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 3 },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "portfolio_unrealized_pnl{account_id=~\"$account\"}",
+          "legendFormat": "P/L",
+          "refId": "A"
+        }
+      ],
+      "title": "Profit/Loss",
+      "description": "How much you've gained or lost on your stocks (green = profit, red = loss)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          },
+          "unit": "currencyUSD"
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 3 },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "sum(portfolio_holding_value{account_id=~\"$account\"})",
+          "legendFormat": "Holdings",
+          "refId": "A"
+        }
+      ],
+      "title": "Stock Holdings Value",
+      "description": "The current market value of all your stocks",
+      "type": "stat"
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 3 },
+      "id": 4,
+      "options": {
+        "code": { "language": "plaintext", "showLineNumbers": false },
+        "content": "### Quick Guide\n\n- **Total Value** = Cash + Stocks\n- **Green P/L** = Making money!\n- **Red P/L** = Losing money",
+        "mode": "markdown"
+      },
+      "title": "",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "id": 102,
+      "title": "Am I Making Money?",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "from": -1000000, "result": { "color": "red", "text": "Losing Money" }, "to": -0.01 }, "type": "range" },
+            { "options": { "from": -0.01, "result": { "color": "yellow", "text": "Breaking Even" }, "to": 0.01 }, "type": "range" },
+            { "options": { "from": 0.01, "result": { "color": "green", "text": "Making Money!" }, "to": 1000000 }, "type": "range" }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0 },
+              { "color": "green", "value": 0.01 }
+            ]
+          },
+          "min": -100,
+          "max": 100,
+          "unit": "currencyUSD"
+        }
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 8 },
+      "id": 5,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "targets": [
+        {
+          "expr": "portfolio_unrealized_pnl{account_id=~\"$account\"}",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "Your Returns",
+      "description": "A simple view of whether you're up or down",
+      "type": "gauge"
+    },
+    {
+      "gridPos": { "h": 6, "w": 16, "x": 8, "y": 8 },
+      "id": 6,
+      "options": {
+        "code": { "language": "plaintext", "showLineNumbers": false },
+        "content": "## Understanding Your Returns\n\n**Unrealized Profit/Loss** means the gain or loss you would have if you sold all your stocks right now.\n\n- If the gauge is **green** and says \"Making Money!\" - your stocks are worth more than you paid\n- If it's **red** and says \"Losing Money\" - your stocks are worth less than you paid\n- If it's **yellow** - you're about even\n\n**Remember:** Stock prices go up and down all the time. A loss today might be a gain tomorrow!",
+        "mode": "markdown"
+      },
+      "title": "What Does This Mean?",
+      "type": "text"
+    },
+    {
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 103,
+      "title": "Your Stocks",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "currencyUSD"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "id": 7,
+      "options": {
+        "displayLabels": ["name", "value"],
+        "legend": { "displayMode": "table", "placement": "right", "showLegend": true, "values": ["value", "percent"] },
+        "pieType": "pie",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "expr": "portfolio_holding_value{account_id=~\"$account\"}",
+          "legendFormat": "{{ ticker }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Portfolio Breakdown",
+      "description": "How your money is divided between different stocks",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "id": 8,
+      "options": {
+        "displayMode": "lcd",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showUnfilled": true
+      },
+      "targets": [
+        {
+          "expr": "portfolio_holding_value{account_id=~\"$account\"}",
+          "legendFormat": "{{ ticker }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Value by Stock",
+      "description": "How much each stock is worth",
+      "type": "bargauge"
+    },
+    {
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "id": 104,
+      "title": "Portfolio Value Over Time",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "opacity",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "currencyUSD"
+        }
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 24 },
+      "id": 9,
+      "options": {
+        "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "portfolio_total_value{account_id=~\"$account\"}",
+          "legendFormat": "Total Value",
+          "refId": "A"
+        },
+        {
+          "expr": "portfolio_holding_value{account_id=~\"$account\"}",
+          "legendFormat": "{{ ticker }}",
+          "refId": "B"
+        }
+      ],
+      "title": "Portfolio Value History",
+      "description": "Watch how your portfolio value changes over time",
+      "type": "timeseries"
+    },
+    {
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+      "id": 105,
+      "title": "Learning Corner",
+      "type": "row"
+    },
+    {
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 33 },
+      "id": 10,
+      "options": {
+        "code": { "language": "plaintext", "showLineNumbers": false },
+        "content": "## Key Investment Terms\n\n| Term | What It Means | Example |\n|------|--------------|--------|\n| **Portfolio** | All the stocks and cash you own | Your entire collection of investments |\n| **Holdings** | The stocks you currently own | If you own 10 shares of TECH, that's a holding |\n| **Cost Basis** | The total amount you paid for your stocks | Bought 10 shares at $50 each = $500 cost basis |\n| **Current Value** | What your stocks are worth right now | If those shares are now $60 each = $600 current value |\n| **Unrealized P/L** | Profit or loss you'd have if you sold now | $600 - $500 = $100 unrealized profit |\n| **Realized P/L** | Actual profit or loss after you sell | Only counts after you sell your stocks |\n\n### Tips for Beginners\n\n1. **Don't panic** when you see red numbers - prices go up and down daily\n2. **Diversify** - don't put all your money in one stock\n3. **Think long-term** - successful investors often hold for years, not days\n4. **Keep learning** - understanding what you invest in is key",
+        "mode": "markdown"
+      },
+      "title": "Investment Glossary",
+      "type": "text"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 38,
+  "tags": ["stock-exchange", "portfolio", "beginner"],
+  "templating": {
+    "list": [
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": ["All"],
+          "value": ["$__all"]
+        },
+        "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+        "definition": "label_values(portfolio_total_value, account_id)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Account",
+        "multi": true,
+        "name": "account",
+        "options": [],
+        "query": {
+          "query": "label_values(portfolio_total_value, account_id)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "My Portfolio",
+  "uid": "my-portfolio",
+  "version": 1
+}
