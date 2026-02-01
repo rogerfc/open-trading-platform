@@ -1126,3 +1126,172 @@ class TestEdgeCases:
         # No trade due to insufficient cash
         assert len(trades) == 0
         assert buy_order.status == OrderStatus.CANCELLED
+
+
+class TestCostBasisTracking:
+    """Tests for cost basis tracking during trades."""
+
+    @pytest.mark.asyncio
+    async def test_cost_basis_on_buy(self, test_session, company, seller, buyer):
+        """Buyer's cost basis is set to purchase price * quantity."""
+        # Seller fixture already has 1000 shares - update with cost basis
+        seller_holding = await test_session.get(Holding, (seller.id, company.ticker))
+        seller_holding.cost_basis = Decimal("50000.00")  # $50/share
+        await test_session.commit()
+
+        # Create sell order at $100
+        sell_order = Order(
+            id="sell_cb1",
+            account_id=seller.id,
+            ticker=company.ticker,
+            side=OrderSide.SELL,
+            order_type=OrderType.LIMIT,
+            price=Decimal("100.00"),
+            quantity=50,
+            remaining_quantity=50,
+            status=OrderStatus.OPEN,
+            timestamp=datetime.now(UTC),
+        )
+        test_session.add(sell_order)
+        await test_session.commit()
+
+        # Buyer places buy order
+        buy_order = Order(
+            id="buy_cb1",
+            account_id=buyer.id,
+            ticker=company.ticker,
+            side=OrderSide.BUY,
+            order_type=OrderType.LIMIT,
+            price=Decimal("100.00"),
+            quantity=50,
+            remaining_quantity=50,
+            status=OrderStatus.OPEN,
+            timestamp=datetime.now(UTC),
+        )
+        test_session.add(buy_order)
+        await test_session.flush()
+
+        trades = await matching.match_order(test_session, buy_order)
+        await test_session.commit()
+
+        assert len(trades) == 1
+
+        # Buyer's cost basis should be 50 shares * $100 = $5000
+        buyer_holding = await test_session.get(Holding, (buyer.id, company.ticker))
+        assert buyer_holding.quantity == 50
+        assert buyer_holding.cost_basis == Decimal("5000.00")
+
+    @pytest.mark.asyncio
+    async def test_cost_basis_on_sell(self, test_session, company, seller, buyer):
+        """Seller's cost basis is reduced proportionally when selling."""
+        # Seller fixture has 1000 shares - set to 100 with cost basis $5000
+        seller_holding = await test_session.get(Holding, (seller.id, company.ticker))
+        seller_holding.quantity = 100
+        seller_holding.cost_basis = Decimal("5000.00")  # $50/share avg
+        await test_session.commit()
+
+        # Create sell order for 40 shares at $100
+        sell_order = Order(
+            id="sell_cb2",
+            account_id=seller.id,
+            ticker=company.ticker,
+            side=OrderSide.SELL,
+            order_type=OrderType.LIMIT,
+            price=Decimal("100.00"),
+            quantity=40,
+            remaining_quantity=40,
+            status=OrderStatus.OPEN,
+            timestamp=datetime.now(UTC),
+        )
+        test_session.add(sell_order)
+        await test_session.commit()
+
+        # Buyer places buy order
+        buy_order = Order(
+            id="buy_cb2",
+            account_id=buyer.id,
+            ticker=company.ticker,
+            side=OrderSide.BUY,
+            order_type=OrderType.LIMIT,
+            price=Decimal("100.00"),
+            quantity=40,
+            remaining_quantity=40,
+            status=OrderStatus.OPEN,
+            timestamp=datetime.now(UTC),
+        )
+        test_session.add(buy_order)
+        await test_session.flush()
+
+        trades = await matching.match_order(test_session, buy_order)
+        await test_session.commit()
+
+        assert len(trades) == 1
+
+        # Seller's cost basis: sold 40 of 100 shares at avg cost $50
+        # Cost basis reduces by 40 * $50 = $2000
+        # Remaining: $5000 - $2000 = $3000
+        await test_session.refresh(seller_holding)
+        assert seller_holding.quantity == 60
+        assert seller_holding.cost_basis == Decimal("3000.00")
+
+    @pytest.mark.asyncio
+    async def test_cost_basis_accumulates_on_multiple_buys(
+        self, test_session, company, seller, buyer
+    ):
+        """Cost basis accumulates when buying more shares."""
+        # Update seller to have 200 shares with cost basis
+        seller_holding = await test_session.get(Holding, (seller.id, company.ticker))
+        seller_holding.quantity = 200
+        seller_holding.cost_basis = Decimal("10000.00")
+
+        # Create buyer holding with 50 shares at cost basis $2500 ($50/share)
+        buyer_holding = Holding(
+            account_id=buyer.id,
+            ticker=company.ticker,
+            quantity=50,
+            cost_basis=Decimal("2500.00"),
+        )
+        test_session.add(buyer_holding)
+        await test_session.commit()
+
+        # Create sell order at $100
+        sell_order = Order(
+            id="sell_cb3",
+            account_id=seller.id,
+            ticker=company.ticker,
+            side=OrderSide.SELL,
+            order_type=OrderType.LIMIT,
+            price=Decimal("100.00"),
+            quantity=50,
+            remaining_quantity=50,
+            status=OrderStatus.OPEN,
+            timestamp=datetime.now(UTC),
+        )
+        test_session.add(sell_order)
+        await test_session.commit()
+
+        # Buyer buys 50 more shares at $100
+        buy_order = Order(
+            id="buy_cb3",
+            account_id=buyer.id,
+            ticker=company.ticker,
+            side=OrderSide.BUY,
+            order_type=OrderType.LIMIT,
+            price=Decimal("100.00"),
+            quantity=50,
+            remaining_quantity=50,
+            status=OrderStatus.OPEN,
+            timestamp=datetime.now(UTC),
+        )
+        test_session.add(buy_order)
+        await test_session.flush()
+
+        trades = await matching.match_order(test_session, buy_order)
+        await test_session.commit()
+
+        assert len(trades) == 1
+
+        # Buyer's cost basis: $2500 (original) + $5000 (new) = $7500
+        await test_session.refresh(buyer_holding)
+        assert buyer_holding.quantity == 100
+        assert buyer_holding.cost_basis == Decimal("7500.00")

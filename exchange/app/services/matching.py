@@ -91,10 +91,12 @@ async def match_order(session: AsyncSession, order: Order) -> list[Trade]:
         )
         session.add(trade)
 
-        # Transfer cash and shares
+        # Transfer cash and shares (including cost basis tracking)
         total_cash = execution_price * execution_quantity
         await _transfer_cash(session, buyer_id, seller_id, total_cash)
-        await _transfer_shares(session, order.ticker, seller_id, buyer_id, execution_quantity)
+        await _transfer_shares(
+            session, order.ticker, seller_id, buyer_id, execution_quantity, execution_price
+        )
 
         # Update order quantities and statuses
         _update_order_after_fill(order, execution_quantity)
@@ -256,11 +258,13 @@ async def _transfer_shares(
     from_account_id: str,
     to_account_id: str,
     quantity: int,
+    price: Decimal,
 ) -> None:
     """Transfer shares from seller to buyer.
 
     Creates holding for buyer if needed.
     Deletes holding for seller if quantity reaches 0.
+    Updates cost basis for both parties.
 
     Args:
         session: Database session
@@ -268,8 +272,9 @@ async def _transfer_shares(
         from_account_id: Seller's account
         to_account_id: Buyer's account
         quantity: Number of shares to transfer
+        price: Execution price per share (for cost basis calculation)
     """
-    # Decrease seller's holding
+    # Decrease seller's holding and adjust cost basis
     result = await session.execute(
         select(Holding).where(
             and_(
@@ -279,12 +284,18 @@ async def _transfer_shares(
         )
     )
     seller_holding = result.scalar_one()
+
+    # Reduce cost basis proportionally: (cost_basis / old_qty) * sold_qty
+    if seller_holding.quantity > 0 and seller_holding.cost_basis > 0:
+        cost_per_share = seller_holding.cost_basis / seller_holding.quantity
+        seller_holding.cost_basis -= cost_per_share * quantity
+
     seller_holding.quantity -= quantity
 
     if seller_holding.quantity == 0:
         await session.delete(seller_holding)
 
-    # Increase buyer's holding (create if needed)
+    # Increase buyer's holding (create if needed) and add to cost basis
     result = await session.execute(
         select(Holding).where(
             and_(
@@ -295,13 +306,17 @@ async def _transfer_shares(
     )
     buyer_holding = result.scalar_one_or_none()
 
+    purchase_cost = price * quantity
+
     if buyer_holding:
         buyer_holding.quantity += quantity
+        buyer_holding.cost_basis += purchase_cost
     else:
         new_holding = Holding(
             account_id=to_account_id,
             ticker=ticker,
             quantity=quantity,
+            cost_basis=purchase_cost,
         )
         session.add(new_holding)
 
