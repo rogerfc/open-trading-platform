@@ -457,12 +457,6 @@
           "text": ["All"],
           "value": ["$__all"]
         },
-
-        "current": {
-          "selected": true,
-          "text": ["All"],
-          "value": [".*"]
-        },
         "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
         "definition": "label_values(exchange_trades_total, ticker)",
         "hide": 0,
