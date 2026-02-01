@@ -36,11 +36,16 @@ spec:
             - containerPort: 12345
               name: http
           env:
-            - name: GRAFANA_CLOUD_USER
+            - name: PROMETHEUS_USER
               valueFrom:
                 secretKeyRef:
                   name: grafana-cloud
-                  key: GRAFANA_CLOUD_USER
+                  key: PROMETHEUS_USER
+            - name: LOKI_USER
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-cloud
+                  key: LOKI_USER
             - name: GRAFANA_CLOUD_API_KEY
               valueFrom:
                 secretKeyRef:

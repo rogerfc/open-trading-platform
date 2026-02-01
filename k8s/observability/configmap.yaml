@@ -60,7 +60,7 @@ data:
         url = env("PROMETHEUS_URL")
 
         basic_auth {
-          username = env("GRAFANA_CLOUD_USER")
+          username = env("PROMETHEUS_USER")
           password = env("GRAFANA_CLOUD_API_KEY")
         }
       }
@@ -79,7 +79,7 @@ data:
         url = env("LOKI_URL")
 
         basic_auth {
-          username = env("GRAFANA_CLOUD_USER")
+          username = env("LOKI_USER")
           password = env("GRAFANA_CLOUD_API_KEY")
         }
       }
