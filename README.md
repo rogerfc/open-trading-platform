@@ -8,6 +8,7 @@ A complete stock exchange simulation with autonomous trading agents, deployed on
 |-----------|-------------|
 | `exchange/` | Stock exchange API server |
 | `agents/` | Autonomous trading agent platform |
+| `web/` | Web dashboard for trading |
 | `k8s/` | Kubernetes manifests |
 | `market/` | Unified CLI for all operations |
 | `scenario/` | Scenario definitions and management |
@@ -59,6 +60,7 @@ GRANT ALL ON SCHEMA public TO agents_user;
 ```bash
 nerdctl build -t stockexchange/exchange:latest ./exchange
 nerdctl build -t stockexchange/agents:latest ./agents
+nerdctl build -t stockexchange/web:latest ./web
 ```
 
 ### 3. Deploy to Kubernetes
@@ -86,6 +88,7 @@ kubectl apply -f k8s/gateway/gateway.yaml
 kubectl apply -f k8s/observability/
 kubectl apply -f k8s/exchange/
 kubectl apply -f k8s/agents/
+kubectl apply -f k8s/web/
 ```
 
 ### 4. Configure Host Access
@@ -97,7 +100,7 @@ kubectl get svc -n nginx-gateway nginx-gateway -o jsonpath='{.status.loadBalance
 
 Add to `/etc/hosts`:
 ```
-<GATEWAY_IP> exchange.local agents.local
+<GATEWAY_IP> exchange.local agents.local web.local
 ```
 
 ### 5. Verify
@@ -105,6 +108,7 @@ Add to `/etc/hosts`:
 ```bash
 curl http://exchange.local/health
 curl http://agents.local/health
+curl http://web.local/health
 ```
 
 ### 6. Load a Scenario
@@ -174,6 +178,12 @@ k8s/
 │   ├── service.yaml
 │   ├── httproute.yaml        # Routes agents.local
 │   └── referencegrant.yaml
+├── web/
+│   ├── configmap.yaml
+│   ├── deployment.yaml
+│   ├── httproute.yaml        # Routes web.local
+│   ├── referencegrant.yaml
+│   └── service.yaml
 └── observability/
     ├── configmap.yaml        # Alloy config for Grafana Cloud
     ├── deployment.yaml
