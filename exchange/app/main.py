@@ -35,6 +35,8 @@ async def lifespan(app: FastAPI):
         if handler:
             logging.getLogger().addHandler(handler)
             logging.getLogger().setLevel(logging.INFO)
+        # Register portfolio metrics gauges
+        telemetry.setup_portfolio_metrics()
         print("Telemetry initialized (OTLP metrics + logs enabled)")
     else:
         print("Telemetry disabled")

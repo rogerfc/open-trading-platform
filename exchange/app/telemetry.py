@@ -205,3 +205,81 @@ def register_gauge_callback(name: str, callback, description: str, unit: str = "
         unit=unit,
     )
     _gauge_callbacks[name] = callback
+
+
+# --- Portfolio metrics storage ---
+# These store the latest values and are exported as observable gauges
+_portfolio_values: dict[str, float] = {}  # account_id -> total_value
+_portfolio_pnl: dict[str, float] = {}  # account_id -> unrealized_pnl
+_holding_values: dict[tuple[str, str], float] = {}  # (account_id, ticker) -> value
+
+
+def _portfolio_value_callback():
+    """Callback for portfolio_total_value gauge."""
+    for account_id, value in _portfolio_values.items():
+        yield (value, {"account_id": account_id})
+
+
+def _portfolio_pnl_callback():
+    """Callback for portfolio_unrealized_pnl gauge."""
+    for account_id, pnl in _portfolio_pnl.items():
+        yield (pnl, {"account_id": account_id})
+
+
+def _holding_value_callback():
+    """Callback for portfolio_holding_value gauge."""
+    for (account_id, ticker), value in _holding_values.items():
+        yield (value, {"account_id": account_id, "ticker": ticker})
+
+
+def setup_portfolio_metrics() -> None:
+    """Register portfolio-related observable gauges.
+
+    Call this after setup_telemetry() to register portfolio metrics.
+    """
+    if not _initialized or _meter is None:
+        return
+
+    register_gauge_callback(
+        "portfolio_total_value",
+        _portfolio_value_callback,
+        "Total portfolio value (cash + holdings)",
+        "currency",
+    )
+
+    register_gauge_callback(
+        "portfolio_unrealized_pnl",
+        _portfolio_pnl_callback,
+        "Unrealized profit/loss on holdings",
+        "currency",
+    )
+
+    register_gauge_callback(
+        "portfolio_holding_value",
+        _holding_value_callback,
+        "Current market value of each holding",
+        "currency",
+    )
+
+
+def record_portfolio_value(account_id: str, total_value: float, unrealized_pnl: float) -> None:
+    """Record portfolio value metrics for an account.
+
+    Called when portfolio summary is accessed via API.
+    """
+    if not _initialized:
+        return
+
+    _portfolio_values[account_id] = total_value
+    _portfolio_pnl[account_id] = unrealized_pnl
+
+
+def record_holding_value(account_id: str, ticker: str, value: float) -> None:
+    """Record holding value metric for an account's position.
+
+    Called when portfolio holdings are accessed via API.
+    """
+    if not _initialized:
+        return
+
+    _holding_values[(account_id, ticker)] = value

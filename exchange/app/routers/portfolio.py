@@ -12,6 +12,7 @@ from app.schemas.portfolio import (
     PortfolioSummaryResponse,
 )
 from app.services import portfolio as portfolio_service
+from app import telemetry
 
 router = APIRouter()
 
@@ -40,6 +41,14 @@ async def get_portfolio_summary(
 
     if summary is None:
         raise HTTPException(status_code=404, detail="Account not found")
+
+    # Record telemetry metrics
+    if summary.total_value is not None and summary.unrealized_pnl is not None:
+        telemetry.record_portfolio_value(
+            account.id,
+            float(summary.total_value),
+            float(summary.unrealized_pnl),
+        )
 
     return PortfolioSummaryResponse(
         account_id=summary.account_id,
@@ -73,6 +82,11 @@ async def get_portfolio_holdings(
     - **unrealized_pnl**: Your profit or loss (positive = profit!)
     """
     holdings = await portfolio_service.get_holdings_with_pnl(session, account.id)
+
+    # Record telemetry metrics for each holding
+    for h in holdings:
+        if h.current_value is not None:
+            telemetry.record_holding_value(account.id, h.ticker, float(h.current_value))
 
     return PortfolioHoldingsResponse(
         holdings=[
