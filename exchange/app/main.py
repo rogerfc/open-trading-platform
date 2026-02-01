@@ -66,3 +66,13 @@ app.include_router(trader_router, prefix="/api/v1", tags=["trader"])
 async def health_check():
     """Health check endpoint."""
     return {"status": "ok"}
+
+
+@app.get("/api/version")
+async def get_version():
+    """Get API version information."""
+    return {
+        "version": VERSION,
+        "api_version": "v1",
+        "min_client_version": "0.2.0",
+    }
