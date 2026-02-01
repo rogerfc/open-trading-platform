@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Market - Student Trading{% endblock %}
+
+{% block content %}
+<h1>Market Overview</h1>
+
+{% if error %}
+<div class="error">{{ error }}</div>
+{% endif %}
+
+<div class="card">
+    {% if companies %}
+    <table>
+        <thead>
+            <tr>
+                <th>Ticker</th>
+                <th>Company Name</th>
+                <th>Last Price</th>
+                <th>Change</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for company in companies %}
+            <tr>
+                <td><strong>{{ company.ticker }}</strong></td>
+                <td>{{ company.name }}</td>
+                <td>${{ "%.2f"|format(company.last_price|default(company.ipo_price, true)) }}</td>
+                <td>
+                    {% if company.price_change is defined %}
+                        {% if company.price_change >= 0 %}
+                        <span class="positive">+{{ "%.2f"|format(company.price_change) }}%</span>
+                        {% else %}
+                        <span class="negative">{{ "%.2f"|format(company.price_change) }}%</span>
+                        {% endif %}
+                    {% else %}
+                    <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="/stock/{{ company.ticker }}" class="btn">View</a>
+                    {% if logged_in %}
+                    <a href="/trade/{{ company.ticker }}" class="btn success">Trade</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted">No companies available. The market may be closed or not yet initialized.</p>
+    {% endif %}
+</div>
+
+<p class="text-muted">
+    <meta http-equiv="refresh" content="30">
+    Page auto-refreshes every 30 seconds.
+</p>
+{% endblock %}

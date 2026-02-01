@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Student Trading{% endblock %}
+
+{% block content %}
+<h1>Login</h1>
+
+{% if error %}
+<div class="error">{{ error }}</div>
+{% endif %}
+
+<div class="card">
+    <form method="post" action="/login">
+        <div>
+            <label for="api_key">API Key</label>
+            <input type="text" id="api_key" name="api_key" required
+                   placeholder="Enter your API key" autocomplete="off">
+        </div>
+        <button type="submit">Login</button>
+    </form>
+</div>
+
+<p class="text-muted">
+    Don't have an account? <a href="/register">Register here</a>
+</p>
+{% endblock %}

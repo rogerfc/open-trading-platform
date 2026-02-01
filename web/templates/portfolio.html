@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Portfolio - Student Trading{% endblock %}
+
+{% block content %}
+<h1>My Portfolio</h1>
+
+{% if error %}
+<div class="error">{{ error }}</div>
+{% endif %}
+
+{% if summary %}
+<div class="grid">
+    <div class="card">
+        <h3>Cash Balance</h3>
+        <p style="font-size: 2rem; margin: 0;">${{ "{:,.2f}".format(summary.cash) }}</p>
+    </div>
+    <div class="card">
+        <h3>Holdings Value</h3>
+        <p style="font-size: 2rem; margin: 0;">${{ "{:,.2f}".format(summary.holdings_value|default(0)) }}</p>
+    </div>
+    <div class="card">
+        <h3>Total Value</h3>
+        <p style="font-size: 2rem; margin: 0;">${{ "{:,.2f}".format(summary.total_value|default(summary.cash)) }}</p>
+    </div>
+    <div class="card">
+        <h3>Total P/L</h3>
+        {% set pnl = summary.total_pnl|default(0) %}
+        <p style="font-size: 2rem; margin: 0;" class="{{ 'positive' if pnl >= 0 else 'negative' }}">
+            {{ '+' if pnl >= 0 else '' }}${{ "{:,.2f}".format(pnl) }}
+        </p>
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <h3>Holdings</h3>
+    {% if holdings and holdings.holdings %}
+    <table>
+        <thead>
+            <tr>
+                <th>Ticker</th>
+                <th>Quantity</th>
+                <th>Avg Cost</th>
+                <th>Current Price</th>
+                <th>Market Value</th>
+                <th>P/L</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for holding in holdings.holdings %}
+            <tr>
+                <td><strong>{{ holding.ticker }}</strong></td>
+                <td>{{ "{:,}".format(holding.quantity) }}</td>
+                <td>${{ "%.2f"|format(holding.avg_cost|default(0)) }}</td>
+                <td>${{ "%.2f"|format(holding.current_price|default(0)) }}</td>
+                <td>${{ "{:,.2f}".format(holding.market_value|default(0)) }}</td>
+                <td class="{{ 'positive' if holding.unrealized_pnl|default(0) >= 0 else 'negative' }}">
+                    {{ '+' if holding.unrealized_pnl|default(0) >= 0 else '' }}${{ "{:,.2f}".format(holding.unrealized_pnl|default(0)) }}
+                </td>
+                <td>
+                    <a href="/trade/{{ holding.ticker }}" class="btn">Trade</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted">No holdings yet. <a href="/trade">Start trading!</a></p>
+    {% endif %}
+</div>
+
+{% if account %}
+<div class="card">
+    <h3>Portfolio Chart</h3>
+    <iframe
+        src="{{ grafana_url }}/d/my-portfolio/my-portfolio?orgId=1&var-account={{ account.account_id }}&kiosk"
+        width="100%"
+        height="400"
+        frameborder="0"
+        style="border-radius: 4px;">
+    </iframe>
+    <p class="text-muted" style="margin-top: 0.5rem;">
+        Chart may take a moment to load. If it doesn't appear, Grafana may not be running.
+    </p>
+</div>
+{% endif %}
+
+<p class="text-muted">
+    <meta http-equiv="refresh" content="30">
+    Page auto-refreshes every 30 seconds.
+</p>
+{% endblock %}

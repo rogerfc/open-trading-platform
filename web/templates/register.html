@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Student Trading{% endblock %}
+
+{% block content %}
+<h1>Create Account</h1>
+
+{% if error %}
+<div class="error">{{ error }}</div>
+{% endif %}
+
+{% if success %}
+<div class="success">
+    <p><strong>Account created successfully!</strong></p>
+    <p>Your API key is:</p>
+    <p style="font-family: monospace; font-size: 1.2rem; background: rgba(255,255,255,0.2); padding: 0.5rem; word-break: break-all;">
+        {{ api_key }}
+    </p>
+    <p><strong>Save this key!</strong> You won't be able to see it again.</p>
+</div>
+<p>
+    <a href="/login" class="btn">Go to Login</a>
+</p>
+{% else %}
+<div class="card">
+    <form method="post" action="/register">
+        <div>
+            <label for="account_id">Account Name</label>
+            <input type="text" id="account_id" name="account_id" required
+                   placeholder="e.g., john_doe" pattern="[a-zA-Z0-9_-]+"
+                   title="Letters, numbers, underscores, and hyphens only">
+        </div>
+        <div>
+            <label for="initial_cash">Starting Cash ($)</label>
+            <input type="number" id="initial_cash" name="initial_cash"
+                   value="10000" min="0" step="100">
+        </div>
+        <button type="submit">Create Account</button>
+    </form>
+</div>
+
+<p class="text-muted">
+    Already have an account? <a href="/login">Login here</a>
+</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-config
+  namespace: web
+  labels:
+    app.kubernetes.io/name: web
+    app.kubernetes.io/part-of: stockexchange
+data:
+  EXCHANGE_URL: "http://exchange.exchange.svc.cluster.local:8000"
+  GRAFANA_URL: "http://grafana.local"

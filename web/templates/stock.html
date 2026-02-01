@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}{{ ticker }} - Student Trading{% endblock %}
+
+{% block content %}
+{% if error %}
+<div class="error">{{ error }}</div>
+<p><a href="/market">Back to Market</a></p>
+{% else %}
+
+<h1>{{ company.ticker }} - {{ company.name }}</h1>
+
+<div class="flex flex-wrap">
+    <div class="card" style="flex: 1; min-width: 300px;">
+        <h3>Company Info</h3>
+        <table>
+            <tr>
+                <td>Last Price</td>
+                <td><strong>${{ "%.2f"|format(company.last_price|default(company.ipo_price, true)) }}</strong></td>
+            </tr>
+            <tr>
+                <td>IPO Price</td>
+                <td>${{ "%.2f"|format(company.ipo_price) }}</td>
+            </tr>
+            <tr>
+                <td>Total Shares</td>
+                <td>{{ "{:,}".format(company.total_shares) }}</td>
+            </tr>
+            <tr>
+                <td>Float Shares</td>
+                <td>{{ "{:,}".format(company.float_shares) }}</td>
+            </tr>
+        </table>
+        {% if logged_in %}
+        <div class="mt-2">
+            <a href="/trade/{{ ticker }}" class="btn success">Trade {{ ticker }}</a>
+        </div>
+        {% else %}
+        <div class="mt-2">
+            <a href="/login" class="btn">Login to Trade</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="flex flex-wrap">
+    <div class="card" style="flex: 1; min-width: 300px;">
+        <h3>Order Book - Bids</h3>
+        {% if orderbook and orderbook.bids %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bid in orderbook.bids %}
+                <tr>
+                    <td class="positive">${{ "%.2f"|format(bid.price) }}</td>
+                    <td>{{ "{:,}".format(bid.quantity) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">No bids</p>
+        {% endif %}
+    </div>
+
+    <div class="card" style="flex: 1; min-width: 300px;">
+        <h3>Order Book - Asks</h3>
+        {% if orderbook and orderbook.asks %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ask in orderbook.asks %}
+                <tr>
+                    <td class="negative">${{ "%.2f"|format(ask.price) }}</td>
+                    <td>{{ "{:,}".format(ask.quantity) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">No asks</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <h3>Recent Trades</h3>
+    {% if trades %}
+    <table>
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Price</th>
+                <th>Quantity</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for trade in trades %}
+            <tr>
+                <td>{{ trade.timestamp[:19] if trade.timestamp else '-' }}</td>
+                <td>${{ "%.2f"|format(trade.price) }}</td>
+                <td>{{ "{:,}".format(trade.quantity) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted">No recent trades</p>
+    {% endif %}
+</div>
+
+<p class="text-muted">
+    <a href="/market">Back to Market</a>
+</p>
+
+{% endif %}
+{% endblock %}

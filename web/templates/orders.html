@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Orders - Student Trading{% endblock %}
+
+{% block content %}
+<h1>My Orders</h1>
+
+{% if error %}
+<div class="error">{{ error }}</div>
+{% endif %}
+
+<div class="card">
+    <div class="mb-2">
+        <strong>Filter:</strong>
+        <a href="/orders" class="{{ '' if filter_status else 'btn' }}" style="{{ '' if filter_status else '' }}">All</a>
+        <a href="/orders?status=open" class="{{ 'btn' if filter_status == 'open' else '' }}">Open</a>
+        <a href="/orders?status=filled" class="{{ 'btn' if filter_status == 'filled' else '' }}">Filled</a>
+        <a href="/orders?status=cancelled" class="{{ 'btn' if filter_status == 'cancelled' else '' }}">Cancelled</a>
+    </div>
+
+    {% if orders %}
+    <table>
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Time</th>
+                <th>Ticker</th>
+                <th>Side</th>
+                <th>Type</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Filled</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td style="font-family: monospace; font-size: 0.85rem;">{{ order.order_id[:8] }}...</td>
+                <td>{{ order.created_at[:19] if order.created_at else '-' }}</td>
+                <td><strong>{{ order.ticker }}</strong></td>
+                <td class="{{ 'positive' if order.side == 'buy' else 'negative' }}">
+                    {{ order.side|upper }}
+                </td>
+                <td>{{ order.order_type }}</td>
+                <td>{{ order.quantity }}</td>
+                <td>
+                    {% if order.price %}
+                    ${{ "%.2f"|format(order.price) }}
+                    {% else %}
+                    Market
+                    {% endif %}
+                </td>
+                <td>{{ order.filled_quantity|default(0) }}</td>
+                <td>
+                    {% if order.status == 'open' %}
+                    <span style="color: #f39c12;">{{ order.status }}</span>
+                    {% elif order.status == 'filled' %}
+                    <span class="positive">{{ order.status }}</span>
+                    {% elif order.status == 'cancelled' %}
+                    <span class="text-muted">{{ order.status }}</span>
+                    {% else %}
+                    {{ order.status }}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if order.status == 'open' %}
+                    <form method="post" action="/orders/{{ order.order_id }}/cancel" style="display: inline; margin: 0;">
+                        <button type="submit" class="danger" style="padding: 0.25rem 0.5rem; font-size: 0.85rem;">
+                            Cancel
+                        </button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted">No orders found.</p>
+    {% endif %}
+</div>
+
+<p class="text-muted">
+    <a href="/trade">Place New Order</a>
+</p>
+{% endblock %}

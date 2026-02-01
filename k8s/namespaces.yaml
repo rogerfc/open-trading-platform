@@ -27,3 +27,12 @@ metadata:
   labels:
     app.kubernetes.io/name: observability
     app.kubernetes.io/part-of: stockexchange
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: web
+  labels:
+    app.kubernetes.io/name: web
+    app.kubernetes.io/part-of: stockexchange
