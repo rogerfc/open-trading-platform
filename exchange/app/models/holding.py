@@ -5,7 +5,9 @@ Represents who owns how many shares of each company.
 Uses a composite primary key (account_id, ticker).
 """
 
-from sqlalchemy import BigInteger, CheckConstraint, ForeignKey, String
+from decimal import Decimal
+
+from sqlalchemy import BigInteger, CheckConstraint, ForeignKey, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -28,6 +30,12 @@ class Holding(Base):
     # When quantity reaches 0, the row should be deleted
     quantity: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
+    # Total cost basis for this holding (sum of purchase prices)
+    # Used to calculate profit/loss when selling
+    cost_basis: Mapped[Decimal] = mapped_column(
+        Numeric(15, 2), nullable=False, default=Decimal("0.00")
+    )
+
     # Relationships
     account: Mapped["Account"] = relationship(back_populates="holdings")
     company: Mapped["Company"] = relationship(back_populates="holdings")
@@ -38,7 +46,7 @@ class Holding(Base):
     )
 
     def __repr__(self) -> str:
-        return f"Holding(account={self.account_id!r}, ticker={self.ticker!r}, quantity={self.quantity})"
+        return f"Holding(account={self.account_id!r}, ticker={self.ticker!r}, quantity={self.quantity}, cost_basis={self.cost_basis})"
 
 
 # Import at end to avoid circular imports
