@@ -72,7 +72,7 @@ class TestAuthentication:
     @pytest.mark.asyncio
     async def test_missing_api_key(self, test_client):
         """Returns 401 when API key is missing."""
-        response = await test_client.get("/account")
+        response = await test_client.get("/api/v1/account")
         assert response.status_code == 401
         assert "Missing API key" in response.json()["detail"]
 
@@ -80,7 +80,7 @@ class TestAuthentication:
     async def test_invalid_api_key(self, test_client):
         """Returns 401 when API key is invalid."""
         response = await test_client.get(
-            "/account",
+            "/api/v1/account",
             headers={"X-API-Key": "sk_invalid_key_12345"},
         )
         assert response.status_code == 401
@@ -91,7 +91,7 @@ class TestAuthentication:
         """Returns 200 with valid API key."""
         account, api_key = trader_account
         response = await test_client.get(
-            "/account",
+            "/api/v1/account",
             headers={"X-API-Key": api_key},
         )
         assert response.status_code == 200
@@ -108,7 +108,7 @@ class TestAccount:
         """Returns account info."""
         account, api_key = trader_account
         response = await test_client.get(
-            "/account",
+            "/api/v1/account",
             headers={"X-API-Key": api_key},
         )
         assert response.status_code == 200
@@ -129,7 +129,7 @@ class TestHoldings:
         """Returns empty list when no holdings."""
         account, api_key = trader_account
         response = await test_client.get(
-            "/holdings",
+            "/api/v1/holdings",
             headers={"X-API-Key": api_key},
         )
         assert response.status_code == 200
@@ -141,7 +141,7 @@ class TestHoldings:
         """Returns holdings list."""
         account, api_key, holding = trader_with_holding
         response = await test_client.get(
-            "/holdings",
+            "/api/v1/holdings",
             headers={"X-API-Key": api_key},
         )
         assert response.status_code == 200
@@ -162,7 +162,7 @@ class TestPlaceOrder:
         """Can place a limit buy order."""
         account, api_key = trader_account
         response = await test_client.post(
-            "/orders",
+            "/api/v1/orders",
             headers={"X-API-Key": api_key},
             json={
                 "ticker": "TEST",
@@ -187,7 +187,7 @@ class TestPlaceOrder:
         """Can place a limit sell order with sufficient shares."""
         account, api_key, holding = trader_with_holding
         response = await test_client.post(
-            "/orders",
+            "/api/v1/orders",
             headers={"X-API-Key": api_key},
             json={
                 "ticker": "TEST",
@@ -208,7 +208,7 @@ class TestPlaceOrder:
         """Can place a market buy order."""
         account, api_key = trader_account
         response = await test_client.post(
-            "/orders",
+            "/api/v1/orders",
             headers={"X-API-Key": api_key},
             json={
                 "ticker": "TEST",
@@ -227,7 +227,7 @@ class TestPlaceOrder:
         """Limit order without price returns 400."""
         account, api_key = trader_account
         response = await test_client.post(
-            "/orders",
+            "/api/v1/orders",
             headers={"X-API-Key": api_key},
             json={
                 "ticker": "TEST",
@@ -244,7 +244,7 @@ class TestPlaceOrder:
         """Unknown ticker returns 400."""
         account, api_key = trader_account
         response = await test_client.post(
-            "/orders",
+            "/api/v1/orders",
             headers={"X-API-Key": api_key},
             json={
                 "ticker": "UNKNOWN",
@@ -262,7 +262,7 @@ class TestPlaceOrder:
         """Sell order without sufficient shares returns 400."""
         account, api_key = trader_account
         response = await test_client.post(
-            "/orders",
+            "/api/v1/orders",
             headers={"X-API-Key": api_key},
             json={
                 "ticker": "TEST",
@@ -281,7 +281,7 @@ class TestPlaceOrder:
         account, api_key = trader_account
         # Account has 10000, try to buy 200 shares at 100 = 20000
         response = await test_client.post(
-            "/orders",
+            "/api/v1/orders",
             headers={"X-API-Key": api_key},
             json={
                 "ticker": "TEST",
@@ -303,7 +303,7 @@ class TestListOrders:
         """Returns empty list when no orders."""
         account, api_key = trader_account
         response = await test_client.get(
-            "/orders",
+            "/api/v1/orders",
             headers={"X-API-Key": api_key},
         )
         assert response.status_code == 200
@@ -317,7 +317,7 @@ class TestListOrders:
 
         # Place an order first
         await test_client.post(
-            "/orders",
+            "/api/v1/orders",
             headers={"X-API-Key": api_key},
             json={
                 "ticker": "TEST",
@@ -329,7 +329,7 @@ class TestListOrders:
         )
 
         response = await test_client.get(
-            "/orders",
+            "/api/v1/orders",
             headers={"X-API-Key": api_key},
         )
         assert response.status_code == 200
@@ -343,7 +343,7 @@ class TestListOrders:
 
         # Place an order
         await test_client.post(
-            "/orders",
+            "/api/v1/orders",
             headers={"X-API-Key": api_key},
             json={
                 "ticker": "TEST",
@@ -356,7 +356,7 @@ class TestListOrders:
 
         # Filter for FILLED (should be empty)
         response = await test_client.get(
-            "/orders?status=FILLED",
+            "/api/v1/orders?status=FILLED",
             headers={"X-API-Key": api_key},
         )
         assert response.status_code == 200
@@ -365,7 +365,7 @@ class TestListOrders:
 
         # Filter for OPEN (should have 1)
         response = await test_client.get(
-            "/orders?status=OPEN",
+            "/api/v1/orders?status=OPEN",
             headers={"X-API-Key": api_key},
         )
         assert response.status_code == 200
@@ -383,7 +383,7 @@ class TestGetOrder:
 
         # Place an order first
         create_response = await test_client.post(
-            "/orders",
+            "/api/v1/orders",
             headers={"X-API-Key": api_key},
             json={
                 "ticker": "TEST",
@@ -396,7 +396,7 @@ class TestGetOrder:
         order_id = create_response.json()["id"]
 
         response = await test_client.get(
-            f"/orders/{order_id}",
+            f"/api/v1/orders/{order_id}",
             headers={"X-API-Key": api_key},
         )
         assert response.status_code == 200
@@ -408,7 +408,7 @@ class TestGetOrder:
         """Returns 404 for unknown order."""
         account, api_key = trader_account
         response = await test_client.get(
-            "/orders/nonexistent-id",
+            "/api/v1/orders/nonexistent-id",
             headers={"X-API-Key": api_key},
         )
         assert response.status_code == 404
@@ -424,7 +424,7 @@ class TestCancelOrder:
 
         # Place an order first
         create_response = await test_client.post(
-            "/orders",
+            "/api/v1/orders",
             headers={"X-API-Key": api_key},
             json={
                 "ticker": "TEST",
@@ -437,7 +437,7 @@ class TestCancelOrder:
         order_id = create_response.json()["id"]
 
         response = await test_client.delete(
-            f"/orders/{order_id}",
+            f"/api/v1/orders/{order_id}",
             headers={"X-API-Key": api_key},
         )
         assert response.status_code == 200
@@ -451,7 +451,7 @@ class TestCancelOrder:
 
         # Place and cancel an order
         create_response = await test_client.post(
-            "/orders",
+            "/api/v1/orders",
             headers={"X-API-Key": api_key},
             json={
                 "ticker": "TEST",
@@ -463,13 +463,13 @@ class TestCancelOrder:
         )
         order_id = create_response.json()["id"]
         await test_client.delete(
-            f"/orders/{order_id}",
+            f"/api/v1/orders/{order_id}",
             headers={"X-API-Key": api_key},
         )
 
         # Try to cancel again
         response = await test_client.delete(
-            f"/orders/{order_id}",
+            f"/api/v1/orders/{order_id}",
             headers={"X-API-Key": api_key},
         )
         assert response.status_code == 400
@@ -480,7 +480,7 @@ class TestCancelOrder:
         """Returns 404 for unknown order."""
         account, api_key = trader_account
         response = await test_client.delete(
-            "/orders/nonexistent-id",
+            "/api/v1/orders/nonexistent-id",
             headers={"X-API-Key": api_key},
         )
         assert response.status_code == 404

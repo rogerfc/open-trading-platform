@@ -54,7 +54,7 @@ class ExchangeClient:
     # Company endpoints
     def list_companies(self) -> list[dict]:
         """List all companies."""
-        response = self._request("GET", "/companies")
+        response = self._request("GET", "/api/v1/companies")
         # Handle wrapped response format
         if isinstance(response, dict) and "companies" in response:
             return response["companies"]
@@ -62,7 +62,7 @@ class ExchangeClient:
 
     def get_company(self, ticker: str) -> dict:
         """Get company details."""
-        return self._request("GET", f"/companies/{ticker}")
+        return self._request("GET", f"/api/v1/companies/{ticker}")
 
     def create_company(
         self,
@@ -92,7 +92,7 @@ class ExchangeClient:
 
     def get_account(self, api_key: str) -> dict:
         """Get account details for the authenticated user."""
-        return self._request("GET", "/account", api_key=api_key)
+        return self._request("GET", "/api/v1/account", api_key=api_key)
 
     def create_account(self, account_id: str, initial_cash: float = 0.0) -> dict:
         """Create a new account."""
@@ -105,7 +105,7 @@ class ExchangeClient:
     # Holdings endpoints
     def get_holdings(self, api_key: str) -> list[dict]:
         """Get holdings for the authenticated user."""
-        return self._request("GET", "/holdings", api_key=api_key)
+        return self._request("GET", "/api/v1/holdings", api_key=api_key)
 
     # Order endpoints
     def list_orders(self, api_key: str, status: str | None = None) -> list[dict]:
@@ -113,11 +113,11 @@ class ExchangeClient:
         params = {}
         if status:
             params["status"] = status
-        return self._request("GET", "/orders", api_key=api_key, params=params)
+        return self._request("GET", "/api/v1/orders", api_key=api_key, params=params)
 
     def get_order(self, order_id: str, api_key: str) -> dict:
         """Get order details."""
-        return self._request("GET", f"/orders/{order_id}", api_key=api_key)
+        return self._request("GET", f"/api/v1/orders/{order_id}", api_key=api_key)
 
     def create_order(
         self,
@@ -137,21 +137,21 @@ class ExchangeClient:
         }
         if price is not None:
             data["price"] = price
-        return self._request("POST", "/orders", api_key=api_key, json=data)
+        return self._request("POST", "/api/v1/orders", api_key=api_key, json=data)
 
     def cancel_order(self, order_id: str, api_key: str) -> dict:
         """Cancel an order."""
-        return self._request("DELETE", f"/orders/{order_id}", api_key=api_key)
+        return self._request("DELETE", f"/api/v1/orders/{order_id}", api_key=api_key)
 
     # Order book endpoints
     def get_orderbook(self, ticker: str, depth: int = 10) -> dict:
         """Get order book for a ticker."""
-        return self._request("GET", f"/orderbook/{ticker}", params={"depth": depth})
+        return self._request("GET", f"/api/v1/orderbook/{ticker}", params={"depth": depth})
 
     # Trade endpoints
     def list_trades(self, ticker: str, limit: int = 20) -> list[dict]:
         """List recent trades for a ticker."""
-        return self._request("GET", f"/trades/{ticker}", params={"limit": limit})
+        return self._request("GET", f"/api/v1/trades/{ticker}", params={"limit": limit})
 
     # Admin endpoints
     def reset(self) -> dict:

@@ -122,7 +122,7 @@ class ExchangeClient:
 
     async def get_companies(self) -> list[Company]:
         """Get all companies."""
-        resp = await self.client.get(f"{self.base_url}/companies")
+        resp = await self.client.get(f"{self.base_url}/api/v1/companies")
         resp.raise_for_status()
         data = resp.json()
         return [
@@ -138,7 +138,7 @@ class ExchangeClient:
     async def get_orderbook(self, ticker: str, depth: int = 10) -> OrderBook:
         """Get order book for a ticker."""
         resp = await self.client.get(
-            f"{self.base_url}/orderbook/{ticker}", params={"depth": depth}
+            f"{self.base_url}/api/v1/orderbook/{ticker}", params={"depth": depth}
         )
         resp.raise_for_status()
         data = resp.json()
@@ -159,7 +159,7 @@ class ExchangeClient:
     async def get_trades(self, ticker: str, limit: int = 50) -> list[Trade]:
         """Get recent trades for a ticker."""
         resp = await self.client.get(
-            f"{self.base_url}/trades/{ticker}", params={"limit": limit}
+            f"{self.base_url}/api/v1/trades/{ticker}", params={"limit": limit}
         )
         resp.raise_for_status()
         data = resp.json()
@@ -178,7 +178,7 @@ class ExchangeClient:
     async def get_account(self) -> AccountInfo:
         """Get account information."""
         resp = await self.client.get(
-            f"{self.base_url}/account", headers=self._headers(authenticated=True)
+            f"{self.base_url}/api/v1/account", headers=self._headers(authenticated=True)
         )
         resp.raise_for_status()
         data = resp.json()
@@ -191,7 +191,7 @@ class ExchangeClient:
     async def get_holdings(self) -> list[Holding]:
         """Get account holdings."""
         resp = await self.client.get(
-            f"{self.base_url}/holdings", headers=self._headers(authenticated=True)
+            f"{self.base_url}/api/v1/holdings", headers=self._headers(authenticated=True)
         )
         resp.raise_for_status()
         data = resp.json()
@@ -210,7 +210,7 @@ class ExchangeClient:
             params["ticker"] = ticker
 
         resp = await self.client.get(
-            f"{self.base_url}/orders",
+            f"{self.base_url}/api/v1/orders",
             headers=self._headers(authenticated=True),
             params=params,
         )
@@ -237,7 +237,7 @@ class ExchangeClient:
             payload["price"] = str(price)
 
         resp = await self.client.post(
-            f"{self.base_url}/orders",
+            f"{self.base_url}/api/v1/orders",
             headers=self._headers(authenticated=True),
             json=payload,
         )
@@ -247,7 +247,7 @@ class ExchangeClient:
     async def cancel_order(self, order_id: str) -> Order:
         """Cancel an order."""
         resp = await self.client.delete(
-            f"{self.base_url}/orders/{order_id}",
+            f"{self.base_url}/api/v1/orders/{order_id}",
             headers=self._headers(authenticated=True),
         )
         resp.raise_for_status()

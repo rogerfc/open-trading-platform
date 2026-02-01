@@ -126,7 +126,7 @@ class TestListCompanies:
     @pytest.mark.asyncio
     async def test_empty_list(self, test_client):
         """Returns empty list when no companies exist."""
-        response = await test_client.get("/companies")
+        response = await test_client.get("/api/v1/companies")
         assert response.status_code == 200
         data = response.json()
         assert data["companies"] == []
@@ -134,7 +134,7 @@ class TestListCompanies:
     @pytest.mark.asyncio
     async def test_list_companies(self, test_client, companies):
         """Returns all companies."""
-        response = await test_client.get("/companies")
+        response = await test_client.get("/api/v1/companies")
         assert response.status_code == 200
         data = response.json()
         assert len(data["companies"]) == 2
@@ -149,13 +149,13 @@ class TestGetCompany:
     @pytest.mark.asyncio
     async def test_not_found(self, test_client):
         """Returns 404 for unknown ticker."""
-        response = await test_client.get("/companies/UNKNOWN")
+        response = await test_client.get("/api/v1/companies/UNKNOWN")
         assert response.status_code == 404
 
     @pytest.mark.asyncio
     async def test_get_company(self, test_client, companies):
         """Returns company details."""
-        response = await test_client.get("/companies/TECH")
+        response = await test_client.get("/api/v1/companies/TECH")
         assert response.status_code == 200
         data = response.json()
         assert data["ticker"] == "TECH"
@@ -170,7 +170,7 @@ class TestGetCompany:
     @pytest.mark.asyncio
     async def test_get_company_with_trades(self, test_client, trades):
         """Returns company with market data from trades."""
-        response = await test_client.get("/companies/TECH")
+        response = await test_client.get("/api/v1/companies/TECH")
         assert response.status_code == 200
         data = response.json()
         assert data["last_price"] == "100.75"  # Most recent trade
@@ -181,7 +181,7 @@ class TestGetCompany:
     @pytest.mark.asyncio
     async def test_case_insensitive(self, test_client, companies):
         """Ticker lookup is case-insensitive."""
-        response = await test_client.get("/companies/tech")
+        response = await test_client.get("/api/v1/companies/tech")
         assert response.status_code == 200
         assert response.json()["ticker"] == "TECH"
 
@@ -195,13 +195,13 @@ class TestOrderBook:
     @pytest.mark.asyncio
     async def test_not_found(self, test_client):
         """Returns 404 for unknown ticker."""
-        response = await test_client.get("/orderbook/UNKNOWN")
+        response = await test_client.get("/api/v1/orderbook/UNKNOWN")
         assert response.status_code == 404
 
     @pytest.mark.asyncio
     async def test_empty_order_book(self, test_client, companies):
         """Returns empty order book when no orders."""
-        response = await test_client.get("/orderbook/TECH")
+        response = await test_client.get("/api/v1/orderbook/TECH")
         assert response.status_code == 200
         data = response.json()
         assert data["ticker"] == "TECH"
@@ -213,7 +213,7 @@ class TestOrderBook:
     @pytest.mark.asyncio
     async def test_order_book_with_orders(self, test_client, orders):
         """Returns aggregated order book."""
-        response = await test_client.get("/orderbook/TECH")
+        response = await test_client.get("/api/v1/orderbook/TECH")
         assert response.status_code == 200
         data = response.json()
 
@@ -237,7 +237,7 @@ class TestOrderBook:
     @pytest.mark.asyncio
     async def test_order_book_depth_limit(self, test_client, orders):
         """Respects depth parameter."""
-        response = await test_client.get("/orderbook/TECH?depth=1")
+        response = await test_client.get("/api/v1/orderbook/TECH?depth=1")
         assert response.status_code == 200
         data = response.json()
         assert len(data["bids"]) == 1
@@ -253,13 +253,13 @@ class TestTrades:
     @pytest.mark.asyncio
     async def test_not_found(self, test_client):
         """Returns 404 for unknown ticker."""
-        response = await test_client.get("/trades/UNKNOWN")
+        response = await test_client.get("/api/v1/trades/UNKNOWN")
         assert response.status_code == 404
 
     @pytest.mark.asyncio
     async def test_empty_trades(self, test_client, companies):
         """Returns empty list when no trades."""
-        response = await test_client.get("/trades/TECH")
+        response = await test_client.get("/api/v1/trades/TECH")
         assert response.status_code == 200
         data = response.json()
         assert data["ticker"] == "TECH"
@@ -268,7 +268,7 @@ class TestTrades:
     @pytest.mark.asyncio
     async def test_list_trades(self, test_client, trades):
         """Returns trades most recent first."""
-        response = await test_client.get("/trades/TECH")
+        response = await test_client.get("/api/v1/trades/TECH")
         assert response.status_code == 200
         data = response.json()
         assert len(data["trades"]) == 3
@@ -281,7 +281,7 @@ class TestTrades:
     @pytest.mark.asyncio
     async def test_trades_limit(self, test_client, trades):
         """Respects limit parameter."""
-        response = await test_client.get("/trades/TECH?limit=2")
+        response = await test_client.get("/api/v1/trades/TECH?limit=2")
         assert response.status_code == 200
         data = response.json()
         assert len(data["trades"]) == 2
@@ -289,7 +289,7 @@ class TestTrades:
     @pytest.mark.asyncio
     async def test_trades_anonymous(self, test_client, trades):
         """Trades don't include buyer/seller info."""
-        response = await test_client.get("/trades/TECH")
+        response = await test_client.get("/api/v1/trades/TECH")
         data = response.json()
         trade = data["trades"][0]
         assert "buyer_id" not in trade
@@ -307,13 +307,13 @@ class TestMarketData:
     @pytest.mark.asyncio
     async def test_not_found(self, test_client):
         """Returns 404 for unknown ticker."""
-        response = await test_client.get("/market-data/UNKNOWN")
+        response = await test_client.get("/api/v1/market-data/UNKNOWN")
         assert response.status_code == 404
 
     @pytest.mark.asyncio
     async def test_market_data_no_trades(self, test_client, companies):
         """Returns null values when no trades."""
-        response = await test_client.get("/market-data/TECH")
+        response = await test_client.get("/api/v1/market-data/TECH")
         assert response.status_code == 200
         data = response.json()
         assert data["ticker"] == "TECH"
@@ -328,7 +328,7 @@ class TestMarketData:
     @pytest.mark.asyncio
     async def test_market_data_with_trades(self, test_client, trades):
         """Returns computed market data."""
-        response = await test_client.get("/market-data/TECH")
+        response = await test_client.get("/api/v1/market-data/TECH")
         assert response.status_code == 200
         data = response.json()
         assert data["ticker"] == "TECH"
@@ -347,7 +347,7 @@ class TestAllMarketData:
     @pytest.mark.asyncio
     async def test_empty(self, test_client):
         """Returns empty list when no companies."""
-        response = await test_client.get("/market-data")
+        response = await test_client.get("/api/v1/market-data")
         assert response.status_code == 200
         data = response.json()
         assert data["markets"] == []
@@ -355,7 +355,7 @@ class TestAllMarketData:
     @pytest.mark.asyncio
     async def test_all_market_data(self, test_client, companies):
         """Returns summary for all companies."""
-        response = await test_client.get("/market-data")
+        response = await test_client.get("/api/v1/market-data")
         assert response.status_code == 200
         data = response.json()
         assert len(data["markets"]) == 2
@@ -366,7 +366,7 @@ class TestAllMarketData:
     @pytest.mark.asyncio
     async def test_all_market_data_with_trades(self, test_client, trades):
         """Returns market data for companies with trades."""
-        response = await test_client.get("/market-data")
+        response = await test_client.get("/api/v1/market-data")
         assert response.status_code == 200
         data = response.json()
 

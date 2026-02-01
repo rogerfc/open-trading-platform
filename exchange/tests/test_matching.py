@@ -3,7 +3,7 @@
 Tests price-time priority matching, settlement, and edge cases.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from decimal import Decimal
 
 import pytest
@@ -125,7 +125,7 @@ class TestPricePriority:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         sell_low = Order(
             id="sell_low",
@@ -137,7 +137,7 @@ class TestPricePriority:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add_all([sell_high, sell_low])
         await test_session.commit()
@@ -153,7 +153,7 @@ class TestPricePriority:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(buy_order)
         await test_session.flush()
@@ -190,7 +190,7 @@ class TestPricePriority:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         buy_high = Order(
             id="buy_high",
@@ -202,7 +202,7 @@ class TestPricePriority:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add_all([buy_low, buy_high])
         await test_session.commit()
@@ -218,7 +218,7 @@ class TestPricePriority:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(sell_order)
         await test_session.flush()
@@ -244,7 +244,7 @@ class TestTimePriority:
     @pytest.mark.asyncio
     async def test_earlier_order_matched_first(self, test_session, company, buyer, seller, seller2):
         """At same price, earlier orders are matched first (FIFO)."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         # Create two sell orders at same price, different times
         sell_early = Order(
@@ -320,7 +320,7 @@ class TestLimitOrders:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(sell_order)
         await test_session.commit()
@@ -335,7 +335,7 @@ class TestLimitOrders:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(buy_order)
         await test_session.flush()
@@ -359,7 +359,7 @@ class TestLimitOrders:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(sell_order)
         await test_session.commit()
@@ -374,7 +374,7 @@ class TestLimitOrders:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(buy_order)
         await test_session.flush()
@@ -399,7 +399,7 @@ class TestLimitOrders:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(buy_order)
         await test_session.commit()
@@ -414,7 +414,7 @@ class TestLimitOrders:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(sell_order)
         await test_session.flush()
@@ -438,7 +438,7 @@ class TestLimitOrders:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(sell_order)
         await test_session.commit()
@@ -453,7 +453,7 @@ class TestLimitOrders:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(buy_order)
         await test_session.flush()
@@ -486,7 +486,7 @@ class TestMarketOrders:
             quantity=50,
             remaining_quantity=50,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(sell_order)
         await test_session.commit()
@@ -501,7 +501,7 @@ class TestMarketOrders:
             quantity=50,
             remaining_quantity=50,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(buy_order)
         await test_session.flush()
@@ -525,7 +525,7 @@ class TestMarketOrders:
             quantity=50,
             remaining_quantity=50,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(buy_order)
         await test_session.commit()
@@ -540,7 +540,7 @@ class TestMarketOrders:
             quantity=50,
             remaining_quantity=50,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(sell_order)
         await test_session.flush()
@@ -564,7 +564,7 @@ class TestMarketOrders:
             quantity=30,  # Only 30 available
             remaining_quantity=30,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(sell_order)
         await test_session.commit()
@@ -579,7 +579,7 @@ class TestMarketOrders:
             quantity=100,  # Wants 100
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(buy_order)
         await test_session.flush()
@@ -625,7 +625,7 @@ class TestSelfTradePrevention:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(sell_order)
         await test_session.commit()
@@ -641,7 +641,7 @@ class TestSelfTradePrevention:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(buy_order)
         await test_session.flush()
@@ -675,7 +675,7 @@ class TestPartialFills:
             quantity=50,  # Only 50 available
             remaining_quantity=50,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(sell_order)
         await test_session.commit()
@@ -690,7 +690,7 @@ class TestPartialFills:
             quantity=100,  # Wants 100
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(buy_order)
         await test_session.flush()
@@ -718,7 +718,7 @@ class TestPartialFills:
             quantity=30,
             remaining_quantity=30,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         sell2 = Order(
             id="sell2",
@@ -730,7 +730,7 @@ class TestPartialFills:
             quantity=70,
             remaining_quantity=70,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add_all([sell1, sell2])
         await test_session.commit()
@@ -745,7 +745,7 @@ class TestPartialFills:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(buy_order)
         await test_session.flush()
@@ -787,7 +787,7 @@ class TestSettlement:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(sell_order)
         await test_session.commit()
@@ -802,7 +802,7 @@ class TestSettlement:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(buy_order)
         await test_session.flush()
@@ -841,7 +841,7 @@ class TestSettlement:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(sell_order)
         await test_session.commit()
@@ -856,7 +856,7 @@ class TestSettlement:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(buy_order)
         await test_session.flush()
@@ -900,7 +900,7 @@ class TestSettlement:
             quantity=50,
             remaining_quantity=50,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(sell_order)
         await test_session.commit()
@@ -915,7 +915,7 @@ class TestSettlement:
             quantity=50,
             remaining_quantity=50,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(buy_order)
         await test_session.flush()
@@ -957,7 +957,7 @@ class TestSettlement:
             quantity=100,  # Sell all
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(sell_order)
         await test_session.commit()
@@ -972,7 +972,7 @@ class TestSettlement:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(buy_order)
         await test_session.flush()
@@ -1011,7 +1011,7 @@ class TestTradeRecords:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(sell_order)
         await test_session.commit()
@@ -1026,7 +1026,7 @@ class TestTradeRecords:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(buy_order)
         await test_session.flush()
@@ -1066,7 +1066,7 @@ class TestEdgeCases:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(buy_order)
         await test_session.flush()
@@ -1100,7 +1100,7 @@ class TestEdgeCases:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(sell_order)
         await test_session.commit()
@@ -1115,7 +1115,7 @@ class TestEdgeCases:
             quantity=100,
             remaining_quantity=100,
             status=OrderStatus.OPEN,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         test_session.add(buy_order)
         await test_session.flush()

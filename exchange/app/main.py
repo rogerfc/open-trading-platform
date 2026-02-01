@@ -55,9 +55,11 @@ app = FastAPI(
 
 
 # Register routers
+# Admin routes stay at /admin (no API versioning for admin)
 app.include_router(admin_router, prefix="/admin", tags=["admin"])
-app.include_router(public_router, tags=["public"])
-app.include_router(trader_router, tags=["trader"])
+# Public and trader routes under /api/v1
+app.include_router(public_router, prefix="/api/v1", tags=["public"])
+app.include_router(trader_router, prefix="/api/v1", tags=["trader"])
 
 
 @app.get("/health")
