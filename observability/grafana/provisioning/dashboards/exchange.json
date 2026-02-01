@@ -14,7 +14,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -45,7 +45,7 @@
       "type": "stat"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -75,7 +75,7 @@
       "type": "stat"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -105,7 +105,7 @@
       "type": "stat"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -141,7 +141,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -187,7 +187,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -239,7 +239,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -285,7 +285,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -331,7 +331,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -383,7 +383,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -414,7 +414,7 @@
       "type": "bargauge"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -457,7 +457,13 @@
           "text": ["All"],
           "value": ["$__all"]
         },
-        "datasource": { "type": "prometheus", "uid": "prometheus" },
+
+        "current": {
+          "selected": true,
+          "text": ["All"],
+          "value": [".*"]
+        },
+        "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
         "definition": "label_values(exchange_trades_total, ticker)",
         "hide": 0,
         "includeAll": true,
