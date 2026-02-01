@@ -646,6 +646,163 @@ def trade_list(ctx: Context, ticker: str, limit: int):
 
 
 # =============================================================================
+# Portfolio Commands
+# =============================================================================
+
+
+@cli.group()
+def portfolio():
+    """View your portfolio and performance."""
+    pass
+
+
+@portfolio.command("show")
+@click.option("--api-key", required=True, help="API key for authentication")
+@pass_context
+def portfolio_show(ctx: Context, api_key: str):
+    """Show portfolio summary.
+
+    Displays your total portfolio value, cash balance, holdings value,
+    and profit/loss (P/L).
+
+    \b
+    What the numbers mean:
+      - Cash Balance: Money available to buy stocks
+      - Holdings Value: Current market value of your stocks
+      - Total Value: Cash + Holdings (your total wealth)
+      - Cost Basis: How much you paid for your stocks
+      - Unrealized P/L: Profit or loss if you sold everything now
+    """
+    try:
+        summary = ctx.exchange.get_portfolio_summary(api_key)
+
+        if ctx.output_format == "table":
+            out.info("\n" + "=" * 50)
+            out.info("  MY PORTFOLIO SUMMARY")
+            out.info("=" * 50)
+
+            # Total value (big number at top)
+            total = float(summary.get("total_value", 0))
+            out.info(f"\n  Total Portfolio Value: ${total:,.2f}")
+
+            # Breakdown
+            cash = float(summary.get("cash_balance", 0))
+            holdings = float(summary.get("holdings_value", 0))
+            out.info(f"\n  Cash Balance:    ${cash:>12,.2f}")
+            out.info(f"  Holdings Value:  ${holdings:>12,.2f}")
+
+            # P/L section
+            pnl = float(summary.get("unrealized_pnl", 0))
+            pnl_pct = float(summary.get("unrealized_pnl_percent", 0) or 0)
+            cost = float(summary.get("total_cost_basis", 0))
+
+            out.info(f"\n  Cost Basis:      ${cost:>12,.2f}")
+
+            # Color the P/L
+            if pnl > 0:
+                pnl_str = click.style(f"+${pnl:,.2f} ({pnl_pct:+.1f}%)", fg="green")
+                status = click.style("Making Money!", fg="green", bold=True)
+            elif pnl < 0:
+                pnl_str = click.style(f"-${abs(pnl):,.2f} ({pnl_pct:+.1f}%)", fg="red")
+                status = click.style("Losing Money", fg="red")
+            else:
+                pnl_str = "$0.00 (0.0%)"
+                status = click.style("Breaking Even", fg="yellow")
+
+            out.info(f"  Unrealized P/L:  {pnl_str}")
+            out.info(f"\n  Status: {status}")
+            out.info("\n" + "=" * 50)
+        else:
+            out.output(summary, ctx.output_format)
+
+    except APIError as e:
+        out.error(e.detail)
+        raise SystemExit(1)
+    except httpx.ConnectError:
+        out.error(f"Cannot connect to exchange at {ctx.exchange_url}")
+        raise SystemExit(1)
+
+
+@portfolio.command("holdings")
+@click.option("--api-key", required=True, help="API key for authentication")
+@pass_context
+def portfolio_holdings(ctx: Context, api_key: str):
+    """Show holdings with profit/loss for each stock.
+
+    \b
+    What the numbers mean for each stock:
+      - Quantity: How many shares you own
+      - Avg Cost: What you paid per share on average
+      - Current: What the stock is selling for now
+      - Value: What your shares are worth now
+      - P/L: Your profit or loss (green = profit!)
+    """
+    try:
+        data = ctx.exchange.get_portfolio_holdings(api_key)
+        holdings = data.get("holdings", [])
+
+        if ctx.output_format == "table":
+            if not holdings:
+                out.info("\nYou don't own any stocks yet.")
+                out.info("Use 'market order create' to buy some!")
+                return
+
+            out.info("\n" + "=" * 70)
+            out.info("  MY STOCK HOLDINGS")
+            out.info("=" * 70)
+
+            # Header
+            out.info(f"\n  {'Stock':<8} {'Qty':>8} {'Avg Cost':>10} {'Current':>10} {'Value':>12} {'P/L':>14}")
+            out.info("  " + "-" * 64)
+
+            total_value = 0
+            total_pnl = 0
+
+            for h in holdings:
+                ticker = h["ticker"]
+                qty = h["quantity"]
+                avg_cost = float(h.get("average_cost", 0) or 0)
+                current = float(h.get("current_price", 0) or 0)
+                value = float(h.get("current_value", 0) or 0)
+                pnl = float(h.get("unrealized_pnl", 0) or 0)
+                pnl_pct = float(h.get("unrealized_pnl_percent", 0) or 0)
+
+                total_value += value
+                total_pnl += pnl
+
+                # Format P/L with color
+                if pnl > 0:
+                    pnl_str = click.style(f"+${pnl:,.2f}", fg="green")
+                elif pnl < 0:
+                    pnl_str = click.style(f"-${abs(pnl):,.2f}", fg="red")
+                else:
+                    pnl_str = "$0.00"
+
+                out.info(f"  {ticker:<8} {qty:>8} ${avg_cost:>9,.2f} ${current:>9,.2f} ${value:>11,.2f} {pnl_str:>14}")
+
+            # Totals
+            out.info("  " + "-" * 64)
+            if total_pnl > 0:
+                total_pnl_str = click.style(f"+${total_pnl:,.2f}", fg="green")
+            elif total_pnl < 0:
+                total_pnl_str = click.style(f"-${abs(total_pnl):,.2f}", fg="red")
+            else:
+                total_pnl_str = "$0.00"
+            out.info(f"  {'TOTAL':<8} {'':<8} {'':<10} {'':<10} ${total_value:>11,.2f} {total_pnl_str:>14}")
+            out.info("\n" + "=" * 70)
+
+        else:
+            out.output(data, ctx.output_format)
+
+    except APIError as e:
+        out.error(e.detail)
+        raise SystemExit(1)
+    except httpx.ConnectError:
+        out.error(f"Cannot connect to exchange at {ctx.exchange_url}")
+        raise SystemExit(1)
+
+
+# =============================================================================
 # Agent Commands
 # =============================================================================
 

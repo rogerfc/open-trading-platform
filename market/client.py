@@ -153,6 +153,15 @@ class ExchangeClient:
         """List recent trades for a ticker."""
         return self._request("GET", f"/api/v1/trades/{ticker}", params={"limit": limit})
 
+    # Portfolio endpoints
+    def get_portfolio_summary(self, api_key: str) -> dict:
+        """Get portfolio summary (total value, P/L, etc.)."""
+        return self._request("GET", "/api/v1/portfolio/summary", api_key=api_key)
+
+    def get_portfolio_holdings(self, api_key: str) -> dict:
+        """Get portfolio holdings with P/L for each position."""
+        return self._request("GET", "/api/v1/portfolio/holdings", api_key=api_key)
+
     # Admin endpoints
     def reset(self) -> dict:
         """Reset the exchange database."""
