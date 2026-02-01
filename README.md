@@ -16,9 +16,18 @@ A complete stock exchange simulation with autonomous trading agents, deployed on
 
 ### Prerequisites
 
+#### Container Runtime (macOS)
+This project uses [Colima](https://github.com/abiosoft/colima) with containerd:
+
 ```bash
+# Install Colima
+brew install colima
+
 # Start Colima with Kubernetes and network address
 colima start --kubernetes --network-address
+
+# nerdctl is included with Colima
+nerdctl version
 
 # Verify cluster
 kubectl cluster-info
@@ -26,6 +35,9 @@ kubectl cluster-info
 # PostgreSQL running on host
 psql -h localhost -U postgres -c "SELECT 1"
 ```
+
+#### Container Runtime (Linux)
+Install containerd and nerdctl directly, or use Podman as an alternative.
 
 ### 1. Create Databases and Users
 
@@ -45,8 +57,8 @@ GRANT ALL ON SCHEMA public TO agents_user;
 ### 2. Build Images
 
 ```bash
-docker build -t stockexchange/exchange:latest ./exchange
-docker build -t stockexchange/agents:latest ./agents
+nerdctl build -t stockexchange/exchange:latest ./exchange
+nerdctl build -t stockexchange/agents:latest ./agents
 ```
 
 ### 3. Deploy to Kubernetes
@@ -302,3 +314,4 @@ pytest agents/tests/
 - [Agent Creation Guide](agents/docs/AGENT_CREATION.md)
 - [Agent Platform README](agents/README.md)
 - [Exchange API Documentation](exchange/docs/)
+- [Container Setup Guide](exchange/docs/CONTAINERS.md)

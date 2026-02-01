@@ -1,6 +1,0 @@
-global:
-  scrape_interval: 15s
-  evaluation_interval: 15s
-
-# No scrape configs needed - we receive metrics via remote_write from Alloy
-scrape_configs: []

@@ -13,9 +13,9 @@ pip install -r requirements.txt
 # Run the platform
 uvicorn agentplatform.main:app --port 8001
 
-# Or with Docker
-docker build -t agent-platform .
-docker run -p 8001:8001 agent-platform
+# Or with nerdctl (Colima)
+nerdctl build -t agent-platform .
+nerdctl run -p 8001:8001 agent-platform
 ```
 
 ## API Endpoints
