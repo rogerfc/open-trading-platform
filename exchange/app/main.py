@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app._version import VERSION
 from app.database import init_db
 
 # Import models to ensure they're registered with SQLAlchemy
@@ -48,7 +49,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Stock Exchange API",
     description="A simple stock exchange simulation",
-    version="0.1.0",
+    version=VERSION,
     lifespan=lifespan,
 )
 

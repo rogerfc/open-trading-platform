@@ -1,3 +1,5 @@
 """Agent Platform - Autonomous trading agent management."""
 
-__version__ = "0.1.0"
+from pathlib import Path
+
+__version__ = (Path(__file__).parent.parent.parent / "VERSION").read_text().strip()
