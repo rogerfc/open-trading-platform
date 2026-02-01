@@ -14,7 +14,7 @@ from app.database import init_db
 
 # Import models to ensure they're registered with SQLAlchemy
 from app.models import Account, Company, Holding, Order, Trade  # noqa: F401
-from app.routers import admin_router, public_router, trader_router
+from app.routers import admin_router, portfolio_router, public_router, trader_router
 from app import telemetry
 
 
@@ -60,6 +60,7 @@ app.include_router(admin_router, prefix="/admin", tags=["admin"])
 # Public and trader routes under /api/v1
 app.include_router(public_router, prefix="/api/v1", tags=["public"])
 app.include_router(trader_router, prefix="/api/v1", tags=["trader"])
+app.include_router(portfolio_router, prefix="/api/v1", tags=["portfolio"])
 
 
 @app.get("/health")
