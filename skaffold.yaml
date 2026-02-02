@@ -1,0 +1,24 @@
+apiVersion: skaffold/v4beta6
+kind: Config
+metadata:
+  name: stockexchange
+build:
+  local:
+    push: false
+  artifacts:
+    - image: stockexchange/exchange
+      docker:
+        dockerfile: exchange/Dockerfile
+    - image: web
+      docker:
+        dockerfile: web/Dockerfile
+    - image: stockexchange/agents
+      docker:
+        dockerfile: agents/Dockerfile
+deploy:
+  kubectl:
+    manifests:
+      - k8s/namespaces.yaml
+      - k8s/exchange/*.yaml
+      - k8s/web/*.yaml
+      - k8s/agents/*.yaml
