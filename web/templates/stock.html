@@ -16,11 +16,11 @@
         <table>
             <tr>
                 <td>Last Price</td>
-                <td><strong>${{ "%.2f"|format(company.last_price|default(company.ipo_price, true)) }}</strong></td>
+                <td><strong>${{ "%.2f"|format((company.last_price|default(company.ipo_price, true))|float) }}</strong></td>
             </tr>
             <tr>
                 <td>IPO Price</td>
-                <td>${{ "%.2f"|format(company.ipo_price) }}</td>
+                <td>${{ "%.2f"|format(company.ipo_price|float) }}</td>
             </tr>
             <tr>
                 <td>Total Shares</td>
@@ -57,7 +57,7 @@
             <tbody>
                 {% for bid in orderbook.bids %}
                 <tr>
-                    <td class="positive">${{ "%.2f"|format(bid.price) }}</td>
+                    <td class="positive">${{ "%.2f"|format(bid.price|float) }}</td>
                     <td>{{ "{:,}".format(bid.quantity) }}</td>
                 </tr>
                 {% endfor %}
@@ -81,7 +81,7 @@
             <tbody>
                 {% for ask in orderbook.asks %}
                 <tr>
-                    <td class="negative">${{ "%.2f"|format(ask.price) }}</td>
+                    <td class="negative">${{ "%.2f"|format(ask.price|float) }}</td>
                     <td>{{ "{:,}".format(ask.quantity) }}</td>
                 </tr>
                 {% endfor %}
@@ -108,7 +108,7 @@
             {% for trade in trades %}
             <tr>
                 <td>{{ trade.timestamp[:19] if trade.timestamp else '-' }}</td>
-                <td>${{ "%.2f"|format(trade.price) }}</td>
+                <td>${{ "%.2f"|format(trade.price|float) }}</td>
                 <td>{{ "{:,}".format(trade.quantity) }}</td>
             </tr>
             {% endfor %}

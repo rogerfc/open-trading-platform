@@ -8,4 +8,4 @@ metadata:
     app.kubernetes.io/part-of: stockexchange
 data:
   EXCHANGE_URL: "http://exchange.exchange.svc.cluster.local:8000"
-  GRAFANA_URL: "http://grafana.local"
+  GRAFANA_URL: "https://rogerfc.grafana.net"

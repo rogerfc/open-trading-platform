@@ -37,36 +37,36 @@
         <tbody>
             {% for order in orders %}
             <tr>
-                <td style="font-family: monospace; font-size: 0.85rem;">{{ order.order_id[:8] }}...</td>
-                <td>{{ order.created_at[:19] if order.created_at else '-' }}</td>
+                <td style="font-family: monospace; font-size: 0.85rem;">{{ order.id[:8] }}...</td>
+                <td>{{ order.timestamp[:19] if order.timestamp else '-' }}</td>
                 <td><strong>{{ order.ticker }}</strong></td>
-                <td class="{{ 'positive' if order.side == 'buy' else 'negative' }}">
+                <td class="{{ 'positive' if order.side|upper == 'BUY' else 'negative' }}">
                     {{ order.side|upper }}
                 </td>
                 <td>{{ order.order_type }}</td>
                 <td>{{ order.quantity }}</td>
                 <td>
                     {% if order.price %}
-                    ${{ "%.2f"|format(order.price) }}
+                    ${{ "%.2f"|format(order.price|float) }}
                     {% else %}
                     Market
                     {% endif %}
                 </td>
-                <td>{{ order.filled_quantity|default(0) }}</td>
+                <td>{{ order.quantity - order.remaining_quantity }}</td>
                 <td>
-                    {% if order.status == 'open' %}
+                    {% if order.status|upper == 'OPEN' %}
                     <span style="color: #f39c12;">{{ order.status }}</span>
-                    {% elif order.status == 'filled' %}
+                    {% elif order.status|upper == 'FILLED' %}
                     <span class="positive">{{ order.status }}</span>
-                    {% elif order.status == 'cancelled' %}
+                    {% elif order.status|upper == 'CANCELLED' %}
                     <span class="text-muted">{{ order.status }}</span>
                     {% else %}
                     {{ order.status }}
                     {% endif %}
                 </td>
                 <td>
-                    {% if order.status == 'open' %}
-                    <form method="post" action="/orders/{{ order.order_id }}/cancel" style="display: inline; margin: 0;">
+                    {% if order.status|upper == 'OPEN' %}
+                    <form method="post" action="/orders/{{ order.id }}/cancel" style="display: inline; margin: 0;">
                         <button type="submit" class="danger" style="padding: 0.25rem 0.5rem; font-size: 0.85rem;">
                             Cancel
                         </button>

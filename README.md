@@ -27,8 +27,8 @@ brew install colima
 # Start Colima with Kubernetes and network address
 colima start --kubernetes --network-address
 
-# nerdctl is included with Colima
-nerdctl version
+# docker is included with Colima
+docker version
 
 # Verify cluster
 kubectl cluster-info
@@ -38,7 +38,7 @@ psql -h localhost -U postgres -c "SELECT 1"
 ```
 
 #### Container Runtime (Linux)
-Install containerd and nerdctl directly, or use Podman as an alternative.
+Install containerd and docker directly, or use Podman as an alternative.
 
 ### 1. Create Databases and Users
 
@@ -58,9 +58,9 @@ GRANT ALL ON SCHEMA public TO agents_user;
 ### 2. Build Images
 
 ```bash
-nerdctl build -t stockexchange/exchange:latest ./exchange
-nerdctl build -t stockexchange/agents:latest ./agents
-nerdctl build -t stockexchange/web:latest ./web
+docker build -t stockexchange/exchange:latest ./exchange
+docker build -t stockexchange/agents:latest ./agents
+docker build -t stockexchange/web:latest -f web/Dockerfile .
 ```
 
 ### 3. Deploy to Kubernetes

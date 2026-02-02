@@ -12,24 +12,24 @@ brew install colima
 # Start Colima with Kubernetes
 colima start --kubernetes --network-address
 
-# nerdctl is included with Colima
-nerdctl version
+# docker is included with Colima
+docker version
 
 # Verify cluster
 kubectl cluster-info
 ```
 
 ### Container Runtime (Linux)
-Install containerd and nerdctl directly, or use Podman as an alternative.
+Install containerd and docker directly, or use Podman as an alternative.
 
 ## Build Images
 
 ```bash
 # Build exchange image
-nerdctl build -t stockexchange/exchange:latest ./exchange
+docker build -t stockexchange/exchange:latest ./exchange
 
 # Build agents image
-nerdctl build -t stockexchange/agents:latest ./agents
+docker build -t stockexchange/agents:latest ./agents
 ```
 
 ## Deploy to Kubernetes

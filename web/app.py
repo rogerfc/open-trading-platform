@@ -262,7 +262,7 @@ async def submit_trade(
             side=side,
             order_type=order_type,
             quantity=quantity,
-            price=price if order_type == "limit" else None,
+            price=price if order_type == "LIMIT" else None,
         )
         ctx["success"] = True
         ctx["order"] = order
@@ -288,7 +288,7 @@ async def orders(request: Request, status: str | None = None):
 
     try:
         order_list = client.list_orders(api_key, status=status)
-        ctx["orders"] = order_list
+        ctx["orders"] = order_list.get("orders", []) if isinstance(order_list, dict) else order_list
         ctx["filter_status"] = status
     except APIError as e:
         ctx["error"] = e.detail

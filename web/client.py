@@ -5,7 +5,7 @@ Wraps the ExchangeClient from market.client for use in the web application.
 
 import os
 
-from market.client import ExchangeClient, APIError
+from lib.client import ExchangeClient, APIError
 
 # Configuration from environment
 EXCHANGE_URL = os.getenv("EXCHANGE_URL", "http://localhost:8000")

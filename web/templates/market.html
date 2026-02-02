@@ -26,7 +26,7 @@
             <tr>
                 <td><strong>{{ company.ticker }}</strong></td>
                 <td>{{ company.name }}</td>
-                <td>${{ "%.2f"|format(company.last_price|default(company.ipo_price, true)) }}</td>
+                <td>${{ "%.2f"|format((company.last_price|default(company.ipo_price, true))|float) }}</td>
                 <td>
                     {% if company.price_change is defined %}
                         {% if company.price_change >= 0 %}

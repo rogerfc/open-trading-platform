@@ -18,6 +18,7 @@ class CompanyPublic(BaseModel):
     name: str
     total_shares: int
     float_shares: int
+    ipo_price: Decimal
 
     model_config = {"from_attributes": True}
 
@@ -35,6 +36,7 @@ class CompanyDetailResponse(BaseModel):
     name: str
     total_shares: int
     float_shares: int
+    ipo_price: Decimal
     last_price: Decimal | None = None
     market_cap: Decimal | None = None
     volume_24h: int = 0

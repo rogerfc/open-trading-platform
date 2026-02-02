@@ -12,7 +12,7 @@
 {% if success %}
 <div class="success">
     <p><strong>Order submitted successfully!</strong></p>
-    <p>Order ID: {{ order.order_id }}</p>
+    <p>Order ID: {{ order.id }}</p>
     <p>Status: {{ order.status }}</p>
 </div>
 {% endif %}
@@ -35,16 +35,16 @@
         <div>
             <label for="side">Side</label>
             <select id="side" name="side" required>
-                <option value="buy">Buy</option>
-                <option value="sell">Sell</option>
+                <option value="BUY">Buy</option>
+                <option value="SELL">Sell</option>
             </select>
         </div>
 
         <div>
             <label for="order_type">Order Type</label>
             <select id="order_type" name="order_type" required onchange="togglePrice()">
-                <option value="market">Market</option>
-                <option value="limit">Limit</option>
+                <option value="MARKET">Market</option>
+                <option value="LIMIT">Limit</option>
             </select>
         </div>
 
@@ -69,7 +69,7 @@ function togglePrice() {
     var orderType = document.getElementById('order_type').value;
     var priceField = document.getElementById('price-field');
     var priceInput = document.getElementById('price');
-    if (orderType === 'limit') {
+    if (orderType === 'LIMIT') {
         priceField.style.display = 'block';
         priceInput.required = true;
     } else {
